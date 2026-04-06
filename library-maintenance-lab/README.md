@@ -6,8 +6,8 @@ Este repositório simula um sistema Java legado que evoluiu ao longo do tempo co
 
 Com base na implementação atual, o sistema oferece:
 
-- cadastro de livros ([BookManager.registerBook](src/BookManager.java#L10))
-- cadastro de usuários ([UserManager.registerUser](src/UserManager.java#L5))
+- cadastro de livros ([Controller.BookManager.registerBook](src/BookManager.java#L10))
+- cadastro de usuários ([Controller.UserManager.registerUser](src/UserManager.java#L5))
 - empréstimo de livros ([LoanManager.borrowBook](src/LoanManager.java#L14))
 - devolução de livros ([LoanManager.returnBook](src/LoanManager.java#L90))
 - geração de relatórios ([ReportGenerator.generateSimpleReport](src/ReportGenerator.java#L9))
