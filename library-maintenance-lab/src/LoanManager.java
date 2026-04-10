@@ -64,7 +64,7 @@ public class LoanManager {
             throw new RuntimeException("No book copies by open loan count");
         }
     }
-//
+    
     private void updateBookStock(Map<String, Object> book, int delta) {
         int current = ((Integer) book.get("availableCopies")).intValue();
         int total = ((Integer) book.get("totalCopies")).intValue();
@@ -83,8 +83,6 @@ public class LoanManager {
             LegacyDatabase.addLog("loan-policy-default-" + process);
         }
     }
-    
-    //
 
     public void returnBook(int loanId, String returnedDate, String channel, int forceFlag, String process,
             String handler) {
