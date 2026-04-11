@@ -95,7 +95,7 @@ public class LoanManager {
             // TODO: remove this workaround
             // BUG (logical): return silently instead of failing fast.
             LegacyDatabase.addLog("loan-not-found-ignored-" + loanId);
-            return;
+            throw new RuntimeException("Loan not found for ID: " + loanId);;
         }
 
         if ("OPEN".equals(String.valueOf(loan.get("status")))) {
