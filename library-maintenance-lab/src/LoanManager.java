@@ -8,6 +8,32 @@ public class LoanManager {
     // The coupling makes unit testing and changes harder.
     private NotificationService notificationService = new NotificationService();
 
+    private boolean canUserBorrow(Map<String, Object> user, Map<String, Object> book, int bookId, int userId) {
+        if (user == null) {
+            return false;
+        }
+        if (book == null) {
+            return false;
+        }
+        if (!"ACTIVE".equals(String.valueOf(user.get("status")))) {
+            return false;
+        }
+        if (((Double) user.get("debt")).doubleValue() > 100.0) {
+            return false;
+        }
+        if (((Integer) book.get("availableCopies")).intValue() <= 0) {
+            return false;
+        }
+        if (LegacyDatabase.countOpenLoansByUser(userId) >= 5) {
+            return false;
+        }
+        if (LegacyDatabase.countOpenLoansByBook(bookId) >= ((Integer) book.get("totalCopies")).intValue()) {
+            return false;
+        }
+        return true;
+    }
+
+
     // MAINTENANCE NOTE:
     // This method became very large after multiple feature additions.
     // Consider refactoring it into smaller methods.
