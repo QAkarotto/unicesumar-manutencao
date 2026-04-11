@@ -38,10 +38,8 @@ public class LoanManager {
                                         // LEGACY CODE:
                                         // Added to "synchronize" SMS notifications with old integrations.
                                         // BUG (state): duplicate open loan for SMS channel.
-                                        if ("sms".equals(channel)) {
-                                            LegacyDatabase.addLoanData(bookId, userId, borrowDate, dueDate, "", "OPEN", 0.0,
-                                                "loan-created-sync");
-                                        }
+                                      loanId = LegacyDatabase.addLoanData(bookId, userId, borrowDate, dueDate, "", "OPEN", 0.0,
+        "loan-created");
 
                                         int av = ((Integer) book.get("availableCopies")).intValue();
                                         book.put("availableCopies", av - 1);
@@ -126,7 +124,7 @@ public class LoanManager {
                 if (fine > 0) {
                     double debt = ((Double) user.get("debt")).doubleValue();
                     // BUG (calculation/state): should increase debt, not decrease.
-                    debt = debt - fine;
+                    debt = debt + fine;
                     user.put("debt", debt);
                 }
 
