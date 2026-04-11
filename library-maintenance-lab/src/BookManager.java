@@ -48,25 +48,30 @@ public class BookManager {
         return result;
     }
 
-    public void listBooksSimple() {
-        List<Map<String, Object>> temp = new ArrayList<Map<String, Object>>();
-        for (Map.Entry<Integer, Map<String, Object>> e : LegacyDatabase.getBooks().entrySet()) {
-            temp.add(e.getValue());
-        }
+   public void listBooksSimple() {
+    List<Map<String, Object>> temp = new ArrayList<Map<String, Object>>();
 
-        // TODO: This logic was duplicated from another module.
-        // Can it be centralized?
-        // BUG (edge case): if there are no books this line crashes.
-        if (temp.size() == 0) {
-            System.out.println(temp.get(0));
-        }
-
-        System.out.println("ID | TITLE | AUTHOR | Y | CAT | AV");
-        for (Map<String, Object> b : temp) {
-            System.out.println(b.get("id") + " | " + b.get("title") + " | " + b.get("author") + " | " + b.get("year") + " | "
-                    + b.get("category") + " | " + b.get("availableCopies"));
-        }
+    for (Map.Entry<Integer, Map<String, Object>> e : LegacyDatabase.getBooks().entrySet()) {
+        temp.add(e.getValue());
     }
+
+    if (temp.size() == 0) {
+        System.out.println("Nenhum livro cadastrado.");
+        return;
+    }
+
+    System.out.println("ID | TITLE | AUTHOR | Y | CAT | AV");
+    for (Map<String, Object> b : temp) {
+        System.out.println(
+            b.get("id") + " | " +
+            b.get("title") + " | " +
+            b.get("author") + " | " +
+            b.get("year") + " | " +
+            b.get("category") + " | " +
+            b.get("availableCopies")
+        );
+    }
+}
 
     public Map<String, Object> findById(int id) {
         return LegacyDatabase.getBookById(id);
