@@ -78,6 +78,44 @@ public class LibrarySystem {
         DataUtil.printSeparator();
     }
 
+    public void startCli() {
+ // ...
+ } else if ("8".equals(option)) {
+ handleListLoans();
+ } else if ("9".equals(option)) {
+ handleUserLoanHistory();
+ } else if ("10".equals(option)) {
+ handleDebugArea();
+ } else if ("0".equals(option)) {
+ running = false;
+ System.out.println("bye");
+ } else {
+ System.out.println("invalid option");
+ }
+ // ...
+ }
+ public void handleUserLoanHistory() {
+ try {
+ int userId = DataUtil.askInt("User ID: ", -1);
+ List<Map<String, Object>> loans = userManager.getUserLoanHistory(userId);
+ DataUtil.printHeader("Loan History for User " + userId);
+ if (loans.isEmpty()) {
+ System.out.println("No loan history found for this user.");
+ } else {
+ System.out.println("ID | BOOK | BORROW | DUE | RETURNED | STATUS | FINE");
+ for (Map<String, Object> loan : loans) {
+ System.out.println(loan.get("id") + " | " + loan.get("bookId") + " | " +
+loan.get("borrowDate") + " | "
+ + loan.get("dueDate") + " | " + loan.get("returnedDate") + " | " + loan.get("status") + " | "
+ + loan.get("fine"));
+ }
+ }
+ } catch (Exception e) {
+ System.out.println("Error retrieving loan history: " + e.getMessage());
+ LegacyDatabase.addLog("handle-user-loan-history-error");
+ }
+ }
+
     public void handleRegisterBook() {
         try {
             // duplicate validation style in manager
