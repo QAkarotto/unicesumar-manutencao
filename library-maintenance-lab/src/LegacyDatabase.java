@@ -1,3 +1,4 @@
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -101,7 +102,6 @@ public class LegacyDatabase {
 
     // old impl
     // public static void reset() { }
-
     public static void addLog(String value) {
         logs.add(value);
     }

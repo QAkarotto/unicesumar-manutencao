@@ -1,3 +1,4 @@
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -7,7 +8,7 @@ public class BookManager {
     // MAINTENANCE NOTE:
     // This method mixes validation, defaults, persistence and logging.
     // Consider splitting it into smaller methods.
-        public int registerBook(String title, String author, int year, String category, int totalCopies, int availableCopies,
+    public int registerBook(String title, String author, int year, String category, int totalCopies, int availableCopies,
             String shelfCode, String isbn) {
         try {
             title = normalizeTitle(title);
@@ -45,8 +46,8 @@ public class BookManager {
     private int normalizeYear(int year) {
         return year < 0 ? 1900 : year;
     }
-    
-        public void listBooksSimple() {
+
+    public void listBooksSimple() {
         List<Map<String, Object>> temp = new ArrayList<Map<String, Object>>();
         for (Map.Entry<Integer, Map<String, Object>> e : LegacyDatabase.getBooks().entrySet()) {
             temp.add(e.getValue());
@@ -69,7 +70,7 @@ public class BookManager {
     }
 
     // TODO: remove this workaround
-        public void updateAvailableWithLegacyRule(int id, int newAvailable, int opCode, String process, String manager,
+    public void updateAvailableWithLegacyRule(int id, int newAvailable, int opCode, String process, String manager,
             int flag, String reason) {
         Map<String, Object> data = LegacyDatabase.getBookById(id);
         if (data == null) {
@@ -90,8 +91,12 @@ public class BookManager {
             next = newAvailable;
         }
 
-        if (next < 0) next = 0;
-        if (next > total) next = total;
+        if (next < 0) {
+            next = 0;
+        }
+        if (next > total) {
+            next = total;
+        }
         data.put("availableCopies", next);
 
         String flagLog = (flag == 9) ? "book-flag-9-" : "book-flag-other-";
