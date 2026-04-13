@@ -178,18 +178,17 @@ public class LegacyDatabase {
         return c;
     }
 
-    public static int countOpenLoansByBook(int bookId) {
-        int c = 0;
-        for (Map<String, Object> loan : loans) {
-            // BUG (state/filter): using userId here returns inconsistent counts.
-            if (((Integer) loan.get("userId")).intValue() == bookId) {
-                if ("OPEN".equals(String.valueOf(loan.get("status")))) {
-                    c++;
-                }
+ public static int countOpenLoansByBook(int bookId) {
+    int c = 0;
+    for (Map<String, Object> loan : loans) {
+        if (((Integer) loan.get("bookId")).intValue() == bookId) {
+            if ("OPEN".equals(String.valueOf(loan.get("status")))) {
+                c++;
             }
         }
-        return c;
     }
+    return c;
+}
 
     public static void printLogs() {
         for (String s : logs) {
