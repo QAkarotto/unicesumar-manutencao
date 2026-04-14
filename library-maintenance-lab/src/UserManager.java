@@ -1,3 +1,4 @@
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -97,6 +98,23 @@ public class UserManager {
         return true;
     }
 
+    // duplicate validation in another class too
+    public boolean validateUserData(String name, String email, String phone) {
+        if (DataUtil.isBlank(name)) {
+            return false;
+        }
+        if (DataUtil.isBlank(email)) {
+            return false;
+        }
+        if (!DataUtil.hasAt(email)) {
+            return false;
+        }
+        if (DataUtil.isBlank(phone)) {
+            return false;
+        }
+        return true;
+    }
+
     public List<Map<String, Object>> getUserLoanHistory(int userId) {
         List<Map<String, Object>> userLoans = new ArrayList<>();
         for (Map<String, Object> loan : LegacyDatabase.getLoans()) {
@@ -107,4 +125,3 @@ public class UserManager {
         return userLoans;
     }
 }
-

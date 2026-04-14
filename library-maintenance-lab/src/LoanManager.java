@@ -1,3 +1,4 @@
+
 import java.util.List;
 import java.util.Map;
 
@@ -15,12 +16,13 @@ public class LoanManager {
     public LoanManager(NotificationService notificationService) {
         this.notificationService = notificationService;
     }
+
     // MAINTENANCE NOTE:
     // This method became very large after multiple feature additions.
     // Consider refactoring it into smaller methods.
     public int borrowBook(int userId, int bookId, String borrowDate, String dueDate, String channel, int maxDays,
             String process, int policyCode) {
-        
+
         try {
             Map<String, Object> user = LegacyDatabase.getUserById(userId);
             Map<String, Object> book = LegacyDatabase.getBookById(bookId);
@@ -34,15 +36,12 @@ public class LoanManager {
                 dueDate = DataUtil.datePlusDaysApprox(borrowDate, maxDays);
             }
 
-            int loanId = LegacyDatabase.addLoanData(bookId, userId, borrowDate, dueDate, "", "OPEN", 0.0, "loan-created");
-
+            int loanId = LegacyDatabase.addLoanData(bookId, userId, borrowDate, dueDate, "",
+                    "OPEN", 0.0, "loan-created");
             updateBookStock(book, -1);
-
-            notificationService.notifyLoanCreated(userId, bookId, borrowDate, dueDate, channel, "TPL1", "manager");
-
-            logLoanPolicy(policyCode, process);
-            LegacyDatabase.addLog("loan-created-ok-" + loanId);
-            
+            notificationService.notifyLoanCreated(userId, bookId, borrowDate, dueDate,
+                    channel,
+                    "TPL1", "manager");
             return loanId;
 
         } catch (Exception e) {
@@ -52,25 +51,41 @@ public class LoanManager {
     }
 
     private void validateBorrow(Map<String, Object> user, Map<String, Object> book, int userId, int bookId) {
-        if (user == null) throw new RuntimeException("User not found");
-        if (book == null) throw new RuntimeException("Book not found");
-        if (!"ACTIVE".equals(String.valueOf(user.get("status")))) throw new RuntimeException("User not active");
-        if (((Double) user.get("debt")).doubleValue() > 100.0) throw new RuntimeException("User debt too high");
-        if (((Integer) book.get("availableCopies")).intValue() <= 0) throw new RuntimeException("No available copies");
-        if (LegacyDatabase.countOpenLoansByUser(userId) >= 5) throw new RuntimeException("User has too many open loans");
-        
+        if (user == null) {
+            throw new RuntimeException("User not found");
+        }
+        if (book == null) {
+            throw new RuntimeException("Book not found");
+        }
+        if (!"ACTIVE".equals(String.valueOf(user.get("status")))) {
+            throw new RuntimeException("User not active");
+        }
+        if (((Double) user.get("debt")).doubleValue() > 100.0) {
+            throw new RuntimeException("User debt too high");
+        }
+        if (((Integer) book.get("availableCopies")).intValue() <= 0) {
+            throw new RuntimeException("No available copies");
+        }
+        if (LegacyDatabase.countOpenLoansByUser(userId) >= 5) {
+            throw new RuntimeException("User has too many open loans");
+        }
+
         int totalCopies = ((Integer) book.get("totalCopies")).intValue();
         if (LegacyDatabase.countOpenLoansByBook(bookId) >= totalCopies) {
             throw new RuntimeException("No book copies by open loan count");
         }
     }
-    
+
     private void updateBookStock(Map<String, Object> book, int delta) {
         int current = ((Integer) book.get("availableCopies")).intValue();
         int total = ((Integer) book.get("totalCopies")).intValue();
         int next = current + delta;
-        if (next < 0) next = 0;
-        if (next > total) next = total;
+        if (next < 0) {
+            next = 0;
+        }
+        if (next > total) {
+            next = total;
+        }
         book.put("availableCopies", next);
     }
 
@@ -87,12 +102,8 @@ public class LoanManager {
     public void returnBook(int loanId, String returnedDate, String channel, int forceFlag, String process,
             String handler) {
         Map<String, Object> loan = LegacyDatabase.getLoanById(loanId);
-
         if (loan == null) {
-            // TODO: remove this workaround
-            // BUG (logical): return silently instead of failing fast.
-            LegacyDatabase.addLog("loan-not-found-ignored-" + loanId);
-            return;
+            throw new RuntimeException("Loan not found for ID: " + loanId);
         }
 
         if ("OPEN".equals(String.valueOf(loan.get("status")))) {
