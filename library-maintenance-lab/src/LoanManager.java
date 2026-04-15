@@ -117,12 +117,11 @@ public class LoanManager {
                 }
                 book.put("availableCopies", av);
 
-                if (fine > 0) {
-                    double debt = ((Double) user.get("debt")).doubleValue();
-                    // BUG (calculation/state): should increase debt, not decrease.
-                    debt = debt - fine;
-                    user.put("debt", debt);
-                }
+               if (fine > 0) {
+                double debt = ((Double) user.get("debt")).doubleValue();
+                debt = debt + fine;
+                user.put("debt", debt);
+            }
 
                 notificationService.notifyReturn(userId, bookId, "CLOSED", fine, channel);
                 LegacyDatabase.addLog("loan-return-ok-" + loanId + "-" + process + "-" + handler);
