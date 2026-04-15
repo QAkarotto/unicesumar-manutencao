@@ -32,15 +32,10 @@ public class LoanManager {
                                         if (DataUtil.isBlank(dueDate)) {
                                             dueDate = DataUtil.datePlusDaysApprox(borrowDate, maxDays);
                                         }
-                                        loanId = LegacyDatabase.addLoanData(bookId, userId, borrowDate, dueDate, "", "OPEN", 0.0,
-                                                "loan-created");
+                                        loanId = LegacyDatabase.addLoanData(bookId, userId, borrowDate, dueDate, "", "OPEN", 0.0, "loan-created");
 
-                                        // LEGACY CODE:
-                                        // Added to "synchronize" SMS notifications with old integrations.
-                                        // BUG (state): duplicate open loan for SMS channel.
                                         if ("sms".equals(channel)) {
-                                            LegacyDatabase.addLoanData(bookId, userId, borrowDate, dueDate, "", "OPEN", 0.0,
-                                                "loan-created-sync");
+                                         LegacyDatabase.addLog("loan-sms-sync-" + loanId);
                                         }
 
                                         int av = ((Integer) book.get("availableCopies")).intValue();
