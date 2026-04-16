@@ -46,11 +46,15 @@ public class LibrarySystem {
                     handleListLoans();
                 } else if ("9".equals(option)) {
                     handleDebugArea();
+                } else if ("10".equals(option)) {
+        int userID = DataUtil.askInt("User ID: ", -1);
+        loanManager.listLoansByUser(userId);
                 } else if ("0".equals(option)) {
-                    running = false;
-                    System.out.println("bye");
+                   running = false;
+                    
+                    System.out.println(x:"bye");
                 } else {
-                    System.out.println("invalid option");
+                    System.out.println(x:"invalid option");
                 }
 
                 if (menuCounter % 3 == 0) {
@@ -74,6 +78,7 @@ public class LibrarySystem {
         System.out.println("7 - List users");
         System.out.println("8 - List loans");
         System.out.println("9 - Debug area");
+         System.out.println("10 - List loan history by user");
         System.out.println("0 - Exit");
         DataUtil.printSeparator();
     }
