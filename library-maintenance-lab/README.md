@@ -1,61 +1,75 @@
-# Laboratório de Manutenção de Software – Sistema Legado de Biblioteca
+# Atividade 2 – Manutenção Corretiva e Evolutiva
 
-Este repositório simula um sistema Java legado que evoluiu ao longo do tempo com múltiplas mudanças incrementais, correções rápidas e decisões arquiteturais de curto prazo. O resultado é um código funcional, porém com alta complexidade de manutenção, ideal para práticas reais de manutenção de software.
+Esta atividade foca em **manutenção corretiva** (correção de falhas reais) e **manutenção evolutiva** (adição de nova funcionalidade), mantendo o comportamento externo do sistema legado.
 
-## Contexto do Sistema
+## Correções realizadas – LoanManager.java
 
-Com base na implementação atual, o sistema oferece:
+Na manutenção corretiva do arquivo `LoanManager.java`, foram corrigidos três bugs reais do sistema:
 
-- cadastro de livros ([BookManager.registerBook](src/BookManager.java#L10))
-- cadastro de usuários ([UserManager.registerUser](src/UserManager.java#L5))
-- empréstimo de livros ([LoanManager.borrowBook](src/LoanManager.java#L14))
-- devolução de livros ([LoanManager.returnBook](src/LoanManager.java#L90))
-- geração de relatórios ([ReportGenerator.generateSimpleReport](src/ReportGenerator.java#L9))
-- operação via menu de linha de comando ([LibrarySystem.startCli](src/LibrarySystem.java#L23))
+1. **Correção do comportamento de empréstimo não encontrado em `returnBook()`**  
+   O sistema passou a lançar exceção quando o empréstimo informado não existe, evitando retorno silencioso e facilitando a identificação do erro.
 
-O projeto contém intencionalmente problemas de manutenibilidade e bugs sutis para apoiar atividades práticas de manutenção preventiva, corretiva e evolutiva.
+2. **Correção do bug de empréstimo duplicado no canal SMS**  
+   Foi removida a criação de um segundo empréstimo no fluxo de notificações por SMS, mantendo apenas um registro correto por operação.
 
-## Organização das Atividades
+3. **Correção do cálculo da dívida do usuário**  
+   A lógica foi ajustada para que a multa aumente a dívida do usuário, em vez de diminuí-la.
 
-As atividades foram separadas em documentos próprios para deixar objetivos, escopo e formato de entrega mais claros:
+Essas mudanças mantiveram o fluxo de `borrowBook()` e `returnBook()` funcional, **sem alterar o comportamento externo** do sistema.
 
-1. [ATIVIDADE_1.md](ATIVIDADE_1.md) - Análise de Código e Manutenção Preventiva
-2. [ATIVIDADE_2.md](ATIVIDADE_2.md) - Manutenção Corretiva e Evolutiva
+## Como reproduzir os problemas (antes e depois)
 
-Data final de entrega: 16/04.
+1. **Empréstimo não encontrado em `returnBook()`**  
+   - Antes: chamar `returnBook()` com empréstimo inexistente resultava em retorno silencioso, sem aviso ao usuário.  
+   - Depois: o método passa a lançar exceção clara, indicando que o empréstimo não foi encontrado.
 
-## Como Executar o Projeto
+2. **Empréstimo duplicado no canal SMS**  
+   - Antes: ao usar o canal SMS, um segundo empréstimo era criado no mesmo fluxo, gerando duplicidade.  
+   - Depois: apenas um único empréstimo é registrado para a mesma operação.
 
-Compilar:
+3. **Erro de cálculo na dívida do usuário**  
+   - Antes: ao aplicar multa/juros, o sistema **subtraía** o valor da dívida.  
+   - Depois: a lógica foi corrigida para **somar** o valor da multa à dívida do usuário.
+
+## Nova funcionalidade implementada
+
+- **Histórico de empréstimos por usuário**  
+  Foi criado o método `LoanManager.listLoansByUser(String userId)` que retorna a lista de todos os empréstimos de um usuário específico, organizando a lógica de consulta de empréstimos em uma operação própria.
+
+A nova funcionalidade:
+
+- foi adicionada de forma **incremental**, sem reescrever o sistema;  
+- mantém as operações existentes funcionando normalmente (cadastro, empréstimo, devolução, relatórios).
+
+## Impactos e riscos conhecidos
+
+- As correções de `LoanManager` não alteraram regras de negócio, apenas **tornaram o tratamento de erro mais claro**.  
+- A nova funcionalidade adiciona comportamento adicional, mas **utiliza os componentes existentes** (BookManager, UserManager, LegacyDatabase) de forma consistente.  
+- Riscos observados:
+  - introdução de nova lógica de validação;  
+  - necessidade de testes manuais adicionais para garantir que regras de limite não sejam quebradas.
+
+## Validação do comportamento
+
+Antes e depois das mudanças foram executados:
 
 ```bash
 javac src/*.java
-```
-
-Executar modo interativo:
-
-```bash
 java -cp src Main
-```
-
-Executar listagem rápida:
-
-```bash
 java -cp src Main --list
-```
-
-Executar relatório rápido:
-
-```bash
 java -cp src Main --report
 ```
 
-## Visão Geral de Problemas de Manutenibilidade
+O sistema continua:
 
-Problemas detalhados e guias de exploração foram movidos para os arquivos de atividade.
+- compilando sem erros;  
+- executando o menu interativo;  
+- listando livros;  
+- gerando relatórios com o mesmo comportamento anterior,  
+enquanto os bugs foram corrigidos e a nova funcionalidade funciona conforme esperado.
 
-## Observação Final
+## Observação final
 
-O objetivo não é reescrever o sistema inteiro do zero.
-
-Os estudantes devem melhorar o sistema incrementalmente, simulando manutenção de software no mundo real com pequenas mudanças seguras, validação contínua e evolução controlada.
+O objetivo não foi reescrever o sistema, e sim simular **manutenção real** com:
+- correções de bugs reais (`LoanManager`);  
+- e evolução incremental com uma nova funcionalidade.
