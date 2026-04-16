@@ -222,4 +222,30 @@ public class LoanManager {
         returnBook(loanId, returnedDate, channel, forceFlag, "cli", "handler");
         System.out.println("Return processed");
     }
+    public void listLoansByUser(int userId) {
+    boolean found = false;
+
+    System.out.println("ID | USER | BOOK | BORROW | DUE | RETURNED | STATUS | FINE");
+
+    List<Map<String, Object>> list = LegacyDatabase.getLoans();
+    for (Map<String, Object> item : list) {
+        if (((Integer) item.get("userId")).intValue() == userId) {
+            found = true;
+            System.out.println(
+                    item.get("id") + " | " +
+                    item.get("userId") + " | " +
+                    item.get("bookId") + " | " +
+                    item.get("borrowDate") + " | " +
+                    item.get("dueDate") + " | " +
+                    item.get("returnedDate") + " | " +
+                    item.get("status") + " | " +
+                    item.get("fine")
+            );
+        }
+    }
+
+    if (!found) {
+        System.out.println("Nenhum empréstimo encontrado para este usuário.");
+    }
+}
 }
