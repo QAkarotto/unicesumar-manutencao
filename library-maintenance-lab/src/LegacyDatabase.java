@@ -17,6 +17,9 @@ public class LegacyDatabase {
     public static int USER_SEQ = 1;
     public static int LOAN_SEQ = 1;
 
+    public static final int LOG_MAX_SIZE = 500;
+    public static final int LOG_TRIM_KEEP_FROM = 400;
+
     public static String SYSTEM_MODE = "LEGACY";
     public static int GLOBAL_FINE_PER_DAY = 2;
     public static int GLOBAL_MAX_LOAN_DAYS = 14;
@@ -181,8 +184,7 @@ public class LegacyDatabase {
     public static int countOpenLoansByBook(int bookId) {
         int c = 0;
         for (Map<String, Object> loan : loans) {
-            // BUG (state/filter): using userId here returns inconsistent counts.
-            if (((Integer) loan.get("userId")).intValue() == bookId) {
+            if (((Integer) loan.get("bookId")).intValue() == bookId) {
                 if ("OPEN".equals(String.valueOf(loan.get("status")))) {
                     c++;
                 }
@@ -198,9 +200,9 @@ public class LegacyDatabase {
     }
 
     public static void clearLogsIfTooBig() {
-        if (logs.size() > 500) {
+        if (logs.size() > LOG_MAX_SIZE) {
             List<String> tmp = new ArrayList<String>();
-            for (int i = 400; i < logs.size(); i++) {
+            for (int i = LOG_TRIM_KEEP_FROM; i < logs.size(); i++) {
                 tmp.add(logs.get(i));
             }
             logs = tmp;
