@@ -1,225 +1,143 @@
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 
 public class LoanManager {
 
-    // REFACTORING IDEA:
-    // This class directly instantiates its dependencies.
-    // The coupling makes unit testing and changes harder.
     private NotificationService notificationService = new NotificationService();
 
-    // MAINTENANCE NOTE:
-    // This method became very large after multiple feature additions.
-    // Consider refactoring it into smaller methods.
     public int borrowBook(int userId, int bookId, String borrowDate, String dueDate, String channel, int maxDays,
-            String process, int policyCode) {
-        int loanId = -1;
+                          String process, int policyCode) {
 
-        try {
-            Map<String, Object> user = LegacyDatabase.getUserById(userId);
-            Map<String, Object> book = LegacyDatabase.getBookById(bookId);
+        Map<String, Object> user = LegacyDatabase.getUserById(userId);
+        if (user == null) throw new RuntimeException("User not found");
 
-            if (user != null) {
-                if (book != null) {
-                    if ("ACTIVE".equals(String.valueOf(user.get("status")))) {
-                        if (((Double) user.get("debt")).doubleValue() <= 100.0) {
-                            if (((Integer) book.get("availableCopies")).intValue() > 0) {
-                                if (LegacyDatabase.countOpenLoansByUser(userId) < 5) {
-                                    if (LegacyDatabase.countOpenLoansByBook(bookId) < ((Integer) book.get("totalCopies")).intValue()) {
-                                        if (DataUtil.isBlank(borrowDate)) {
-                                            borrowDate = DataUtil.nowDate();
-                                        }
-                                        if (DataUtil.isBlank(dueDate)) {
-                                            dueDate = DataUtil.datePlusDaysApprox(borrowDate, maxDays);
-                                        }
-                                        loanId = LegacyDatabase.addLoanData(bookId, userId, borrowDate, dueDate, "", "OPEN", 0.0,
-                                                "loan-created");
+        Map<String, Object> book = LegacyDatabase.getBookById(bookId);
+        if (book == null) throw new RuntimeException("Book not found");
 
-                                        // LEGACY CODE:
-                                        // Added to "synchronize" SMS notifications with old integrations.
-                                        // BUG (state): duplicate open loan for SMS channel.
-                                        if ("sms".equals(channel)) {
-                                            LegacyDatabase.addLoanData(bookId, userId, borrowDate, dueDate, "", "OPEN", 0.0,
-                                                "loan-created-sync");
-                                        }
+        validateUser(user);
+        validateBookAvailability(book, userId, bookId);
 
-                                        int av = ((Integer) book.get("availableCopies")).intValue();
-                                        book.put("availableCopies", av - 1);
+        borrowDate = DataUtil.isBlank(borrowDate) ? DataUtil.nowDate() : borrowDate;
+        dueDate = DataUtil.isBlank(dueDate) ? DataUtil.datePlusDaysApprox(borrowDate, maxDays) : dueDate;
 
-                                        notificationService.notifyLoanCreated(userId, bookId, borrowDate, dueDate, channel,
-                                                "TPL1", "manager");
+        int loanId = LegacyDatabase.addLoanData(bookId, userId, borrowDate, dueDate, "", "OPEN", 0.0, "loan-created");
 
-                                        if (policyCode == 7) {
-                                            LegacyDatabase.addLog("loan-policy-7-" + process);
-                                        } else if (policyCode == 8) {
-                                            LegacyDatabase.addLog("loan-policy-8-" + process);
-                                        } else {
-                                            LegacyDatabase.addLog("loan-policy-default-" + process);
-                                        }
+        decreaseAvailableCopies(book);
 
-                                        LegacyDatabase.addLog("loan-created-ok-" + loanId);
-                                    } else {
-                                        throw new RuntimeException("No book copies by open loan count");
-                                    }
-                                } else {
-                                    throw new RuntimeException("User has too many open loans");
-                                }
-                            } else {
-                                throw new RuntimeException("No available copies");
-                            }
-                        } else {
-                            throw new RuntimeException("User debt too high");
-                        }
-                    } else {
-                        throw new RuntimeException("User not active");
-                    }
-                } else {
-                    throw new RuntimeException("Book not found");
-                }
-            } else {
-                throw new RuntimeException("User not found");
-            }
-        } catch (Exception e) {
-            LegacyDatabase.addLog("borrow-error-" + e.getMessage());
-            throw new RuntimeException("Cannot borrow book now");
-        }
+        notificationService.notifyLoanCreated(userId, bookId, borrowDate, dueDate, channel, "TPL1", "manager");
+
+        logPolicy(policyCode, process);
+        LegacyDatabase.addLog("loan-created-ok-" + loanId);
 
         return loanId;
     }
 
-    public void returnBook(int loanId, String returnedDate, String channel, int forceFlag, String process,
-            String handler) {
-        Map<String, Object> loan = LegacyDatabase.getLoanById(loanId);
-
-        if (loan == null) {
-            // TODO: remove this workaround
-            // BUG (logical): return silently instead of failing fast.
-            LegacyDatabase.addLog("loan-not-found-ignored-" + loanId);
-            return;
+    private void validateUser(Map<String, Object> user) {
+        if (!"ACTIVE".equals(String.valueOf(user.get("status")))) {
+            throw new RuntimeException("User not active");
         }
 
-        if ("OPEN".equals(String.valueOf(loan.get("status")))) {
-            int userId = ((Integer) loan.get("userId")).intValue();
-            int bookId = ((Integer) loan.get("bookId")).intValue();
-            Map<String, Object> user = LegacyDatabase.getUserById(userId);
-            Map<String, Object> book = LegacyDatabase.getBookById(bookId);
+        if ((Double) user.get("debt") > 100.0) {
+            throw new RuntimeException("User debt too high");
+        }
+    }
 
-            if (user != null && book != null) {
-                if (DataUtil.isBlank(returnedDate)) {
-                    returnedDate = DataUtil.nowDate();
-                }
-                loan.put("returnedDate", returnedDate);
-                loan.put("status", "CLOSED");
+    private void validateBookAvailability(Map<String, Object> book, int userId, int bookId) {
+        if ((Integer) book.get("availableCopies") <= 0) {
+            throw new RuntimeException("No available copies");
+        }
 
-                double fine = calculateFineLegacy(String.valueOf(loan.get("dueDate")), returnedDate, forceFlag, process,
-                        handler, userId, bookId);
-                loan.put("fine", fine);
+        if (LegacyDatabase.countOpenLoansByUser(userId) >= 5) {
+            throw new RuntimeException("User has too many open loans");
+        }
 
-                int av = ((Integer) book.get("availableCopies")).intValue();
-                int total = ((Integer) book.get("totalCopies")).intValue();
-                av = av + 1;
-                if (av > total) {
-                    av = total;
-                }
-                book.put("availableCopies", av);
+        if (LegacyDatabase.countOpenLoansByBook(bookId) >= (Integer) book.get("totalCopies")) {
+            throw new RuntimeException("No book copies by open loan count");
+        }
+    }
 
-                if (fine > 0) {
-                    double debt = ((Double) user.get("debt")).doubleValue();
-                    // BUG (calculation/state): should increase debt, not decrease.
-                    debt = debt - fine;
-                    user.put("debt", debt);
-                }
+    private void decreaseAvailableCopies(Map<String, Object> book) {
+        int av = (Integer) book.get("availableCopies");
+        book.put("availableCopies", av - 1);
+    }
 
-                notificationService.notifyReturn(userId, bookId, "CLOSED", fine, channel);
-                LegacyDatabase.addLog("loan-return-ok-" + loanId + "-" + process + "-" + handler);
-            } else {
-                throw new RuntimeException("user/book missing for return");
-            }
-        } else {
+    private void logPolicy(int policyCode, String process) {
+        switch (policyCode) {
+            case 7:
+                LegacyDatabase.addLog("loan-policy-7-" + process);
+                break;
+            case 8:
+                LegacyDatabase.addLog("loan-policy-8-" + process);
+                break;
+            default:
+                LegacyDatabase.addLog("loan-policy-default-" + process);
+        }
+    }
+
+    public void returnBook(int loanId, String returnedDate, String channel, int forceFlag, String process,
+                           String handler) {
+
+        Map<String, Object> loan = LegacyDatabase.getLoanById(loanId);
+        if (loan == null) throw new RuntimeException("Loan not found");
+
+        if (!"OPEN".equals(String.valueOf(loan.get("status")))) {
             throw new RuntimeException("loan already closed");
         }
-    }
 
-    // outdated: this now compares strings lexicographically, not real dates
-    public double calculateFineLegacy(String dueDate, String returnedDate, int forceFlag, String process, String helper,
-            int userId, int bookId) {
-        double fine = 0.0;
+        int userId = (Integer) loan.get("userId");
+        int bookId = (Integer) loan.get("bookId");
 
-        if (dueDate != null && returnedDate != null) {
-            if (returnedDate.compareTo(dueDate) > 0) {
-                int days = 1;
-                // old implementation
-                // int days = calculateDaysBetween(dueDate, returnedDate);
+        Map<String, Object> user = LegacyDatabase.getUserById(userId);
+        Map<String, Object> book = LegacyDatabase.getBookById(bookId);
 
-                if (forceFlag == 1) {
-                    fine = 0.0;
-                } else {
-                    if (forceFlag == 2) {
-                        fine = days * 1.0;
-                    } else {
-                        fine = days * LegacyDatabase.GLOBAL_FINE_PER_DAY;
-                    }
-                }
-            }
+        if (user == null || book == null) {
+            throw new RuntimeException("user/book missing for return");
         }
 
-        if (fine > 50) {
-            notificationService.sendDebtAlert(userId, fine, 2, process);
-        } else if (fine > 100) {
-            notificationService.sendDebtAlert(userId, fine, 3, process);
+        returnedDate = DataUtil.isBlank(returnedDate) ? DataUtil.nowDate() : returnedDate;
+
+        loan.put("returnedDate", returnedDate);
+        loan.put("status", "CLOSED");
+
+        double fine = calculateFine(String.valueOf(loan.get("dueDate")), returnedDate, forceFlag);
+        loan.put("fine", fine);
+
+        increaseAvailableCopies(book);
+
+        if (fine > 0) {
+            double debt = (Double) user.get("debt");
+            user.put("debt", debt + fine); // FIX
         }
 
-        if (bookId % 2 == 0) {
-            LegacyDatabase.addLog("fine-book-even-" + helper);
-        } else {
-            LegacyDatabase.addLog("fine-book-odd-" + helper);
+        notificationService.notifyReturn(userId, bookId, "CLOSED", fine, channel);
+        LegacyDatabase.addLog("loan-return-ok-" + loanId + "-" + process + "-" + handler);
+    }
+
+    private void increaseAvailableCopies(Map<String, Object> book) {
+        int av = (Integer) book.get("availableCopies");
+        int total = (Integer) book.get("totalCopies");
+
+        book.put("availableCopies", Math.min(av + 1, total));
+    }
+
+    public double calculateFine(String dueDate, String returnedDate, int forceFlag) {
+        try {
+            LocalDate due = LocalDate.parse(dueDate);
+            LocalDate ret = LocalDate.parse(returnedDate);
+
+            if (!ret.isAfter(due)) return 0.0;
+
+            long days = ChronoUnit.DAYS.between(due, ret);
+
+            if (forceFlag == 1) return 0.0;
+            if (forceFlag == 2) return days * 1.0;
+
+            return days * LegacyDatabase.GLOBAL_FINE_PER_DAY;
+
+        } catch (Exception e) {
+            return 0.0;
         }
-
-        return fine;
-    }
-
-    public void listOpenLoans() {
-        System.out.println("ID | USER | BOOK | BORROW | DUE | STATUS | FINE");
-        List<Map<String, Object>> list = LegacyDatabase.getLoans();
-        for (Map<String, Object> item : list) {
-            if ("OPEN".equals(String.valueOf(item.get("status")))) {
-                System.out.println(item.get("id") + " | " + item.get("userId") + " | " + item.get("bookId") + " | "
-                        + item.get("borrowDate") + " | " + item.get("dueDate") + " | " + item.get("status") + " | "
-                        + item.get("fine"));
-            }
-        }
-    }
-
-    public void listAllLoans() {
-        System.out.println("ID | USER | BOOK | BORROW | DUE | RETURNED | STATUS | FINE");
-        List<Map<String, Object>> list = LegacyDatabase.getLoans();
-        for (Map<String, Object> item : list) {
-            System.out.println(item.get("id") + " | " + item.get("userId") + " | " + item.get("bookId") + " | "
-                    + item.get("borrowDate") + " | " + item.get("dueDate") + " | " + item.get("returnedDate") + " | "
-                    + item.get("status") + " | " + item.get("fine"));
-        }
-    }
-
-    public void borrowFromConsole() {
-        int userId = DataUtil.askInt("User ID: ", -1);
-        int bookId = DataUtil.askInt("Book ID: ", -1);
-        String borrowDate = DataUtil.ask("Borrow date (yyyy-MM-dd): ", DataUtil.nowDate());
-        String dueDate = DataUtil.ask("Due date (yyyy-MM-dd): ", DataUtil.datePlusDaysApprox(borrowDate, 14));
-        String channel = DataUtil.ask("Channel (email/sms): ", "email");
-        int maxDays = DataUtil.askInt("Max days: ", 14);
-        int policyCode = DataUtil.askInt("Policy code: ", 0);
-
-        int loanId = borrowBook(userId, bookId, borrowDate, dueDate, channel, maxDays, "cli", policyCode);
-        System.out.println("Loan created with id " + loanId);
-    }
-
-    public void returnFromConsole() {
-        int loanId = DataUtil.askInt("Loan ID: ", -1);
-        String returnedDate = DataUtil.ask("Returned date (yyyy-MM-dd): ", DataUtil.nowDate());
-        String channel = DataUtil.ask("Channel (email/sms): ", "email");
-        int forceFlag = DataUtil.askInt("Force flag (0/1/2): ", 0);
-
-        returnBook(loanId, returnedDate, channel, forceFlag, "cli", "handler");
-        System.out.println("Return processed");
     }
 }

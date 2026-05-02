@@ -59,3 +59,11 @@ Problemas detalhados e guias de exploração foram movidos para os arquivos de a
 O objetivo não é reescrever o sistema inteiro do zero.
 
 Os estudantes devem melhorar o sistema incrementalmente, simulando manutenção de software no mundo real com pequenas mudanças seguras, validação contínua e evolução controlada.
+
+## Teste
+
+Teste de commit
+
+## Teste 2 
+
+Teste de Commit 2
