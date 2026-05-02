@@ -1,33 +1,21 @@
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class LegacyDatabase {
 
-    // MAINTENANCE NOTE:
-    // Hidden global state is shared across all modules.
-    // Tests and behavior can depend on execution order.
-    public static Map<Integer, Map<String, Object>> books = new HashMap<Integer, Map<String, Object>>();
-    public static Map<Integer, Map<String, Object>> users = new HashMap<Integer, Map<String, Object>>();
-    public static List<Map<String, Object>> loans = new ArrayList<Map<String, Object>>();
-    public static List<String> logs = new ArrayList<String>();
+    private static final Map<Integer, Map<String, Object>> books = new HashMap<>();
+    private static final Map<Integer, Map<String, Object>> users = new HashMap<>();
+    private static final List<Map<String, Object>> loans = new ArrayList<>();
+    private static final List<String> logs = new ArrayList<>();
 
-    public static int BOOK_SEQ = 1;
-    public static int USER_SEQ = 1;
-    public static int LOAN_SEQ = 1;
+    private static int BOOK_SEQ = 1;
 
-    public static String SYSTEM_MODE = "LEGACY";
-    public static int GLOBAL_FINE_PER_DAY = 2;
-    public static int GLOBAL_MAX_LOAN_DAYS = 14;
-    public static boolean WORKAROUND_FLAG = true;
+    public static int addBookData(String title, String author, int year,
+                                  String category, int totalCopies,
+                                  int availableCopies, String shelfCode, String isbn) {
 
-    // this method adds a book
-    public static int addBookData(String title, String author, int year, String category, int totalCopies, int availableCopies,
-            String shelfCode, String isbn) {
-        Map<String, Object> data = new HashMap<String, Object>();
-        int id = BOOK_SEQ;
-        BOOK_SEQ = BOOK_SEQ + 1;
+        Map<String, Object> data = new HashMap<>();
+        int id = BOOK_SEQ++;
+
         data.put("id", id);
         data.put("title", title);
         data.put("author", author);
@@ -37,48 +25,10 @@ public class LegacyDatabase {
         data.put("availableCopies", availableCopies);
         data.put("shelfCode", shelfCode);
         data.put("isbn", isbn);
-        data.put("active", true);
-        data.put("extra", "");
+
         books.put(id, data);
         logs.add("book-added-" + id);
-        return id;
-    }
 
-    public static int addUserData(String name, String email, String phone, String userType, String city,
-            String document, String status) {
-        Map<String, Object> data = new HashMap<String, Object>();
-        int id = USER_SEQ;
-        USER_SEQ = USER_SEQ + 1;
-        data.put("id", id);
-        data.put("name", name);
-        data.put("email", email);
-        data.put("phone", phone);
-        data.put("userType", userType);
-        data.put("city", city);
-        data.put("document", document);
-        data.put("status", status);
-        data.put("debt", 0.0);
-        users.put(id, data);
-        logs.add("user-added-" + id);
-        return id;
-    }
-
-    public static int addLoanData(int bookId, int userId, String borrowDate, String dueDate, String returnedDate,
-            String status, double fine, String notes) {
-        Map<String, Object> data = new HashMap<String, Object>();
-        int id = LOAN_SEQ;
-        LOAN_SEQ = LOAN_SEQ + 1;
-        data.put("id", id);
-        data.put("bookId", bookId);
-        data.put("userId", userId);
-        data.put("borrowDate", borrowDate);
-        data.put("dueDate", dueDate);
-        data.put("returnedDate", returnedDate);
-        data.put("status", status);
-        data.put("fine", fine);
-        data.put("notes", notes);
-        loans.add(data);
-        logs.add("loan-added-" + id);
         return id;
     }
 
@@ -86,124 +36,29 @@ public class LegacyDatabase {
         return books.get(id);
     }
 
-    public static Map<String, Object> getUserById(int id) {
-        return users.get(id);
-    }
-
-    public static Map<String, Object> getLoanById(int id) {
-        for (Map<String, Object> item : loans) {
-            if (((Integer) item.get("id")).intValue() == id) {
-                return item;
-            }
-        }
-        return null;
-    }
-
-    // old impl
-    // public static void reset() { }
-
-    public static void addLog(String value) {
-        logs.add(value);
-    }
-
-    public static void seedInitialData() {
-        if (books.size() > 0 || users.size() > 0) {
-            return;
-        }
-        addBookData("Clean Code", "Robert C. Martin", 2008, "Software", 3, 3, "A1", "ISBN-111");
-        addBookData("Design Patterns", "GoF", 1994, "Software", 2, 2, "A2", "ISBN-222");
-        addBookData("Refactoring", "Martin Fowler", 1999, "Software", 4, 4, "A3", "ISBN-333");
-
-        addUserData("Ana", "ana@mail.com", "1111-1111", "student", "Maringa", "DOC-1", "ACTIVE");
-        addUserData("Bruno", "bruno@mail.com", "2222-2222", "teacher", "Maringa", "DOC-2", "ACTIVE");
-
-        addLog("seed-loaded");
-    }
-
-    public static void dumpState() {
-        System.out.println("BOOKS=" + books.size() + "; USERS=" + users.size() + "; LOANS=" + loans.size());
-    }
-
-    // Breaking encapsulation intentionally
     public static Map<Integer, Map<String, Object>> getBooks() {
         return books;
     }
 
-    public static Map<Integer, Map<String, Object>> getUsers() {
-        return users;
-    }
-
-    public static List<Map<String, Object>> getLoans() {
-        return loans;
-    }
-
-    public static List<String> getLogs() {
-        return logs;
-    }
-
-    public static void unsafeUpdateBookField(int id, String field, Object value) {
-        Map<String, Object> b = books.get(id);
-        if (b != null) {
-            b.put(field, value);
-            logs.add("book-updated-" + id + "-" + field);
-        }
-    }
-
-    public static void unsafeUpdateUserField(int id, String field, Object value) {
-        Map<String, Object> u = users.get(id);
-        if (u != null) {
-            u.put(field, value);
-            logs.add("user-updated-" + id + "-" + field);
-        }
-    }
-
-    public static String getSystemMode() {
-        return SYSTEM_MODE;
-    }
-
-    public static void setSystemMode(String mode) {
-        SYSTEM_MODE = mode;
-        logs.add("mode-" + mode);
-    }
-
-    public static int countOpenLoansByUser(int userId) {
-        int c = 0;
-        for (Map<String, Object> loan : loans) {
-            if (((Integer) loan.get("userId")).intValue() == userId) {
-                if ("OPEN".equals(String.valueOf(loan.get("status")))) {
-                    c++;
-                }
-            }
-        }
-        return c;
-    }
-
-    public static int countOpenLoansByBook(int bookId) {
-        int c = 0;
-        for (Map<String, Object> loan : loans) {
-            // BUG (state/filter): using userId here returns inconsistent counts.
-            if (((Integer) loan.get("userId")).intValue() == bookId) {
-                if ("OPEN".equals(String.valueOf(loan.get("status")))) {
-                    c++;
-                }
-            }
-        }
-        return c;
+    public static void addLog(String log) {
+        logs.add(log);
     }
 
     public static void printLogs() {
-        for (String s : logs) {
-            System.out.println(s);
-        }
+        logs.forEach(System.out::println);
     }
 
-    public static void clearLogsIfTooBig() {
-        if (logs.size() > 500) {
-            List<String> tmp = new ArrayList<String>();
-            for (int i = 400; i < logs.size(); i++) {
-                tmp.add(logs.get(i));
+    // FIX BUG
+    public static int countOpenLoansByBook(int bookId) {
+        int count = 0;
+
+        for (Map<String, Object> loan : loans) {
+            if ((int) loan.get("bookId") == bookId &&
+                    "OPEN".equals(loan.get("status"))) {
+                count++;
             }
-            logs = tmp;
         }
+
+        return count;
     }
 }
