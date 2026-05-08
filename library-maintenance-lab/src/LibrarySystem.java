@@ -102,7 +102,7 @@ public class LibrarySystem {
             if (total <= 0) {
                 total = 1;
             }
-            if (available < 0) {
+            if (available < 0 || available > total) {
                 available = total;
             }
 
