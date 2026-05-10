@@ -115,12 +115,10 @@ private void registerBorrowPolicy(String process, int policyCode, int loanId) {
             String handler) {
         Map<String, Object> loan = LegacyDatabase.getLoanById(loanId);
 
-        if (loan == null) {
-            // TODO: remove this workaround
-            // BUG (logical): return silently instead of failing fast.
-            LegacyDatabase.addLog("loan-not-found-ignored-" + loanId);
-            return;
-        }
+if (loan == null) {
+    LegacyDatabase.addLog("loan-not-found-" + loanId);
+    throw new RuntimeException("Loan not found");
+}
 
         if ("OPEN".equals(String.valueOf(loan.get("status")))) {
             int userId = ((Integer) loan.get("userId")).intValue();
