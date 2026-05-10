@@ -15,7 +15,7 @@ public class BookManager {
                 // LEGACY CODE:
                 // Quick workaround from a migration script.
                 // BUG (validation): blank title can still be persisted.
-                title = " ";
+                throw new RuntimeException("title invalid");
             }
             if (DataUtil.isBlank(author)) {
                 throw new RuntimeException("author invalid");
@@ -57,8 +57,10 @@ public class BookManager {
         // TODO: This logic was duplicated from another module.
         // Can it be centralized?
         // BUG (edge case): if there are no books this line crashes.
-        if (temp.size() == 0) {
-            System.out.println(temp.get(0));
+        if(temp.isEmpty()){
+            System.out.println("Nao tem livros disponiveis");
+            return;
+        
         }
 
         System.out.println("ID | TITLE | AUTHOR | Y | CAT | AV");

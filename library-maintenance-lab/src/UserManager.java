@@ -2,50 +2,62 @@ import java.util.Map;
 
 public class UserManager {
 
-    public int registerUser(String name, String email, String phone, String userType, String city, String document,
-            String status) {
+        static class UserData {
+        String name;
+        String email;
+        String phone;
+        String userType;
+        String city;
+        String document;
+        String status;
+    }
+
+    public int registerUser(UserData user) {
         int id = -1;
-        if (DataUtil.isBlank(name)) {
+        if (DataUtil.isBlank(user.name)) {
             throw new RuntimeException("name invalid");
         }
-        if (DataUtil.isBlank(email)) {
+        if (DataUtil.isBlank(user.email)) {
             throw new RuntimeException("email invalid");
         }
-        if (!DataUtil.hasAt(email)) {
+        if (!DataUtil.hasAt(user.email)) {
             throw new RuntimeException("email invalid");
         }
-        if (DataUtil.isBlank(phone)) {
-            phone = "0000-0000";
+        if (DataUtil.isBlank(user.phone)) {
+            user.phone = "0000-0000";
         }
-        if (DataUtil.isBlank(userType)) {
-            userType = "student";
+        if (DataUtil.isBlank(user.userType)) {
+            user.userType = "student";
         }
-        if (DataUtil.isBlank(city)) {
-            city = "Unknown";
+        if (DataUtil.isBlank(user.city)) {
+            user.city = "Unknown";
         }
-        if (DataUtil.isBlank(document)) {
-            document = "NO-DOC";
+        if (DataUtil.isBlank(user.document)) {
+            user.document = "NO-DOC";
         }
-        if (DataUtil.isBlank(status)) {
-            status = "ACTIVE";
+        if (DataUtil.isBlank(user.status)) {
+            user.status = "ACTIVE";
         }
 
-        id = LegacyDatabase.addUserData(name, DataUtil.normalizeEmail(email), phone, userType, city, document, status);
+        id = LegacyDatabase.addUserData(user.name, DataUtil.normalizeEmail(user.email), user.phone, user.userType, user.city, user.document, user.status);
         LegacyDatabase.addLog("user-manager-register-" + id);
         return id;
     }
 
     public void registerUserFromConsole() {
-        String name = DataUtil.readLine("Name: ");
-        String email = DataUtil.readLine("Email: ");
-        String phone = DataUtil.readLine("Phone: ");
-        String type = DataUtil.readLine("Type (student/teacher): ");
-        String city = DataUtil.readLine("City: ");
-        String document = DataUtil.readLine("Document: ");
-        String status = DataUtil.readLine("Status: ");
-        int id = registerUser(name, email, phone, type, city, document, status);
+        UserData user = new UserData();
+
+        user.name = DataUtil.readLine("Name: ");
+        user.email = DataUtil.readLine("Email: ");
+        user.phone = DataUtil.readLine("Phone: ");
+        user.userType = DataUtil.readLine("Type (student/teacher): ");
+        user.city = DataUtil.readLine("City: ");
+        user.document = DataUtil.readLine("Document: ");
+        user.status = DataUtil.readLine("Status: ");
+
+        int id = registerUser(user);
         System.out.println("User saved with id " + id);
-    }
+    }       
 
     public Map<String, Object> findById(int id) {
         return LegacyDatabase.getUserById(id);
