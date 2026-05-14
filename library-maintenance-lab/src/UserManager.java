@@ -1,3 +1,6 @@
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class UserManager {
@@ -110,5 +113,15 @@ public class UserManager {
             return false;
         }
         return true;
+    }
+
+    public List<Map<String, Object>> getUserLoanHistory(int userId) {
+        List<Map<String, Object>> userLoans = new ArrayList<>();
+        for (Map<String, Object> loan : LegacyDatabase.getLoans()) {
+            if (((Integer) loan.get("userId")).intValue() == userId) {
+                userLoans.add(loan);
+            }
+        }
+        return userLoans;
     }
 }

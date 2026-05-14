@@ -1,3 +1,4 @@
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,18 +20,15 @@ public class ReportGenerator {
 
         int totalBooks = books.size();
         int totalUsers = users.size();
-        // WARNING: hard-coded adjustment kept from old dashboard migration.
-        // BUG (calculation): totals can be inflated.
-        int totalLoans = loans.size() + 1;
+        int totalLoans = loans.size();
         int openLoans = 0;
         int closedLoans = 0;
-
         for (Map<String, Object> loan : loans) {
             if ("OPEN".equals(String.valueOf(loan.get("status")))) {
                 openLoans++;
+            } else {
+                closedLoans++;
             }
-            // BUG (calculation): closed counter increments for every loan.
-            closedLoans++;
         }
 
         sb.append("Books: ").append(totalBooks).append("\n");

@@ -45,7 +45,7 @@ public class LibrarySystem {
                 } else if ("8".equals(option)) {
                     handleListLoans();
                 } else if ("9".equals(option)) {
-                    handleDebugArea();
+                    handleUserLoanHistory();
                 } else if ("0".equals(option)) {
                     running = false;
                     System.out.println("bye");
@@ -73,7 +73,7 @@ public class LibrarySystem {
         System.out.println("6 - Generate report");
         System.out.println("7 - List users");
         System.out.println("8 - List loans");
-        System.out.println("9 - Debug area");
+        System.out.println("9 - User loan history");
         System.out.println("0 - Exit");
         DataUtil.printSeparator();
     }
@@ -198,6 +198,36 @@ public class LibrarySystem {
         } catch (Exception e) {
             System.out.println("Error list loans");
             LegacyDatabase.addLog("handle-list-loans-error");
+        }
+    }
+
+    public void handleUserLoanHistory() {
+        try {
+            int userId = DataUtil.askInt("User ID: ", -1);
+            List<Map<String, Object>> loans = userManager.getUserLoanHistory(userId);
+
+            DataUtil.printHeader("Loan History for User " + userId);
+
+            if (loans.isEmpty()) {
+                System.out.println("No loan history found for this user.");
+            } else {
+                System.out.println("ID | BOOK | BORROW | DUE | RETURNED | STATUS | FINE");
+
+                for (Map<String, Object> loan : loans) {
+                    System.out.println(
+                        loan.get("id") + " | " +
+                        loan.get("bookId") + " | " +
+                        loan.get("borrowDate") + " | " +
+                        loan.get("dueDate") + " | " +
+                        loan.get("returnedDate") + " | " +
+                        loan.get("status") + " | " +
+                        loan.get("fine")
+                    );
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Error retrieving loan history: " + e.getMessage());
+            LegacyDatabase.addLog("handle-user-loan-history-error");
         }
     }
 

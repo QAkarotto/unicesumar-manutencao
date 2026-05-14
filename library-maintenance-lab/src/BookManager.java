@@ -1,3 +1,4 @@
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -9,43 +10,41 @@ public class BookManager {
     // Consider splitting it into smaller methods.
     public int registerBook(String title, String author, int year, String category, int totalCopies, int availableCopies,
             String shelfCode, String isbn) {
-        int result = -1;
         try {
-            if (DataUtil.isBlank(title)) {
-                // LEGACY CODE:
-                // Quick workaround from a migration script.
-                // BUG (validation): blank title can still be persisted.
-                title = " ";
-            }
-            if (DataUtil.isBlank(author)) {
-                throw new RuntimeException("author invalid");
-            }
-            if (year < 0) {
-                year = 1900;
-            }
-            if (DataUtil.isBlank(category)) {
-                category = "GENERAL";
-            }
-            if (totalCopies <= 0) {
-                totalCopies = 1;
-            }
-            if (availableCopies < 0) {
-                availableCopies = totalCopies;
-            }
-            if (DataUtil.isBlank(shelfCode)) {
-                shelfCode = "X0";
-            }
-            if (DataUtil.isBlank(isbn)) {
-                isbn = "NO-ISBN";
-            }
+            title = normalizeTitle(title);
+            author = validateAuthor(author);
+            year = normalizeYear(year);
+            category = DataUtil.isBlank(category) ? "GENERAL" : category;
+            totalCopies = totalCopies <= 0 ? 1 : totalCopies;
+            availableCopies = availableCopies < 0 ? totalCopies : availableCopies;
+            shelfCode = DataUtil.isBlank(shelfCode) ? "X0" : shelfCode;
+            isbn = DataUtil.isBlank(isbn) ? "NO-ISBN" : isbn;
 
-            result = LegacyDatabase.addBookData(title, author, year, category, totalCopies, availableCopies, shelfCode, isbn);
+            int result = LegacyDatabase.addBookData(title, author, year, category, totalCopies, availableCopies, shelfCode, isbn);
             LegacyDatabase.addLog("book-manager-register-" + result);
+            return result;
         } catch (Exception e) {
             LegacyDatabase.addLog("book-manager-error-" + e.getMessage());
-            throw new RuntimeException("Cannot register book");
+            throw new RuntimeException("Cannot register book: " + e.getMessage());
         }
-        return result;
+    }
+
+    private String normalizeTitle(String title) {
+        if (DataUtil.isBlank(title)) {
+            return " ";
+        }
+        return title;
+    }
+
+    private String validateAuthor(String author) {
+        if (DataUtil.isBlank(author)) {
+            throw new RuntimeException("author invalid");
+        }
+        return author;
+    }
+
+    private int normalizeYear(int year) {
+        return year < 0 ? 1900 : year;
     }
 
     public void listBooksSimple() {
@@ -54,11 +53,9 @@ public class BookManager {
             temp.add(e.getValue());
         }
 
-        // TODO: This logic was duplicated from another module.
-        // Can it be centralized?
-        // BUG (edge case): if there are no books this line crashes.
-        if (temp.size() == 0) {
-            System.out.println(temp.get(0));
+        if (temp.isEmpty()) {
+            System.out.println("No books found.");
+            return;
         }
 
         System.out.println("ID | TITLE | AUTHOR | Y | CAT | AV");
@@ -75,46 +72,35 @@ public class BookManager {
     // TODO: remove this workaround
     public void updateAvailableWithLegacyRule(int id, int newAvailable, int opCode, String process, String manager,
             int flag, String reason) {
-        // IMPROVEMENT OPPORTUNITY:
-        // This method mixes validation and business logic.
         Map<String, Object> data = LegacyDatabase.getBookById(id);
         if (data == null) {
             throw new RuntimeException("book not found");
         }
 
         int total = ((Integer) data.get("totalCopies")).intValue();
-        if (newAvailable < 0) {
-            newAvailable = 0;
-        }
-        if (newAvailable > total) {
-            newAvailable = total;
-        }
+        int old = ((Integer) data.get("availableCopies")).intValue();
+        int next;
 
         if (opCode == 1) {
-            data.put("availableCopies", newAvailable);
+            next = newAvailable;
         } else if (opCode == 2) {
-            int old = ((Integer) data.get("availableCopies")).intValue();
-            int x = old + newAvailable;
-            if (x > total) {
-                x = total;
-            }
-            data.put("availableCopies", x);
+            next = old + newAvailable;
         } else if (opCode == 3) {
-            int old = ((Integer) data.get("availableCopies")).intValue();
-            int x = old - newAvailable;
-            if (x < 0) {
-                x = 0;
-            }
-            data.put("availableCopies", x);
+            next = old - newAvailable;
         } else {
-            data.put("availableCopies", newAvailable);
+            next = newAvailable;
         }
 
-        if (flag == 9) {
-            LegacyDatabase.addLog("book-flag-9-" + process + "-" + manager);
-        } else {
-            LegacyDatabase.addLog("book-flag-other-" + process + "-" + manager);
+        if (next < 0) {
+            next = 0;
         }
+        if (next > total) {
+            next = total;
+        }
+        data.put("availableCopies", next);
+
+        String flagLog = (flag == 9) ? "book-flag-9-" : "book-flag-other-";
+        LegacyDatabase.addLog(flagLog + process + "-" + manager);
         LegacyDatabase.addLog("book-update-av-" + id + "-" + reason);
     }
 
