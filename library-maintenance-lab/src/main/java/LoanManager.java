@@ -1,8 +1,12 @@
 import java.util.List;
 import java.util.Map;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class LoanManager {
 
+        private static final Logger logger = LogManager.getLogger(LoanManager.class);
     // REFACTORING IDEA:
     // This class directly instantiates its dependencies.
     // The coupling makes unit testing and changes harder.
@@ -110,52 +114,73 @@ public class LoanManager {
 
     public void returnBook(int loanId, String returnedDate, String channel, int forceFlag, String process,
             String handler) {
-        Map<String, Object> loan = LegacyDatabase.getLoanById(loanId);
 
-        if (loan == null) {
-            LegacyDatabase.addLog("loan-not-found-" + loanId);
-            throw new RuntimeException("Loan not found");
+        if (loanId <= 0) {
+            logger.error("Contrato violado: Tentativa de retorno com ID de empréstimo inválido: {}.", loanId);
+            throw new IllegalArgumentException("O ID do empréstimo deve ser maior que zero.");
         }
 
-        if ("OPEN".equals(String.valueOf(loan.get("status")))) {
-            int userId = ((Integer) loan.get("userId")).intValue();
-            int bookId = ((Integer) loan.get("bookId")).intValue();
-            Map<String, Object> user = LegacyDatabase.getUserById(userId);
-            Map<String, Object> book = LegacyDatabase.getBookById(bookId);
+        try {
+            Map<String, Object> loan = LegacyDatabase.getLoanById(loanId);
 
-            if (user != null && book != null) {
-                if (DataUtil.isBlank(returnedDate)) {
-                    returnedDate = DataUtil.nowDate();
-                }
-                loan.put("returnedDate", returnedDate);
-                loan.put("status", "CLOSED");
-
-                double fine = calculateFineLegacy(String.valueOf(loan.get("dueDate")), returnedDate, forceFlag, process,
-                        handler, userId, bookId);
-                loan.put("fine", fine);
-
-                int av = ((Integer) book.get("availableCopies")).intValue();
-                int total = ((Integer) book.get("totalCopies")).intValue();
-                av = av + 1;
-                if (av > total) {
-                    av = total;
-                }
-                book.put("availableCopies", av);
-
-                if (fine > 0) {
-                    double debt = ((Double) user.get("debt")).doubleValue();
-                    // BUG (calculation/state): should increase debt, not decrease.
-                    debt = debt + fine;
-                    user.put("debt", debt);
-                }
-
-                notificationService.notifyReturn(userId, bookId, "CLOSED", fine, channel);
-                LegacyDatabase.addLog("loan-return-ok-" + loanId + "-" + process + "-" + handler);
-            } else {
-                throw new RuntimeException("user/book missing for return");
+            if (loan == null) {
+                LegacyDatabase.addLog("loan-not-found-" + loanId);
+                logger.error("Falha de Negócio: Empréstimo não encontrado para o ID: {}.", loanId);
+                throw new IllegalArgumentException("Loan not found for ID: " + loanId);
             }
-        } else {
-            throw new RuntimeException("loan already closed");
+
+            if ("OPEN".equals(String.valueOf(loan.get("status")))) {
+                int userId = ((Integer) loan.get("userId")).intValue();
+                int bookId = ((Integer) loan.get("bookId")).intValue();
+                Map<String, Object> user = LegacyDatabase.getUserById(userId);
+                Map<String, Object> book = LegacyDatabase.getBookById(bookId);
+
+                if (user != null && book != null) {
+                    if (DataUtil.isBlank(returnedDate)) {
+                        returnedDate = DataUtil.nowDate();
+                    }
+                    loan.put("returnedDate", returnedDate);
+                    loan.put("status", "CLOSED");
+
+                    double fine = calculateFineLegacy(String.valueOf(loan.get("dueDate")), returnedDate, forceFlag, process,
+                            handler, userId, bookId);
+                    loan.put("fine", fine);
+
+
+                    int av = ((Integer) book.get("availableCopies")).intValue();
+                    int total = ((Integer) book.get("totalCopies")).intValue();
+                    av = av + 1;
+                    if (av > total) {
+                        av = total;
+                    }
+                    book.put("availableCopies", av);
+
+
+                    if (fine > 0) {
+                        double debt = ((Double) user.get("debt")).doubleValue();
+                        debt = debt + fine; 
+                        user.put("debt", debt);
+                        
+
+                        logger.info("Multa de {} aplicada com sucesso ao usuário ID {}. Nova dívida total: {}.", fine, userId, debt);
+                    } else {
+                        logger.info("Empréstimo ID {} encerrado com sucesso dentro do prazo. Nenhuma multa aplicada.", loanId);
+                    }
+
+                    notificationService.notifyReturn(userId, bookId, "CLOSED", fine, channel);
+                    LegacyDatabase.addLog("loan-return-ok-" + loanId + "-" + process + "-" + handler);
+                } else {
+                    logger.error("Inconsistência de dados: Usuário ou Livro ausentes para o Empréstimo ID {}.", loanId);
+                    throw new RuntimeException("user/book missing for return");
+                }
+            } else {
+                logger.warn("Operação redundante: O empréstimo ID {} já se encontra encerrado.", loanId);
+                throw new RuntimeException("loan already closed");
+            }
+
+        } catch (Exception e) {
+            logger.error("Erro grave e inesperado capturado ao processar a devolução do empréstimo ID {}.", loanId, e);
+            throw e;
         }
     }
 
