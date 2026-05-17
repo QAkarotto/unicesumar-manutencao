@@ -1,9 +1,12 @@
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class BookManager {
 
+    private static final Logger logger = LogManager.getLogger(BookManager.class);
     // MAINTENANCE NOTE:
     // This method mixes validation, defaults, persistence and logging.
     // Consider splitting it into smaller methods.
@@ -49,28 +52,43 @@ public class BookManager {
     }
 
     public void listBooksSimple() {
-        List<Map<String, Object>> temp = new ArrayList<Map<String, Object>>();
-        for (Map.Entry<Integer, Map<String, Object>> e : LegacyDatabase.getBooks().entrySet()) {
-            temp.add(e.getValue());
+
+        if (LegacyDatabase.getBooks() == null) {
+            logger.error("Contrato violado pelo estado global: Banco de dados de livros está nulo.");
+            throw new IllegalStateException("Erro de Contrato: O banco de dados de livros não está inicializado.");
         }
 
-        // TODO: This logic was duplicated from another module.
-        // Can it be centralized?
-        // BUG (edge case): if there are no books this line crashes.
-        if(temp.isEmpty()){
-            System.out.println("Nao tem livros disponiveis");
-            return;
-        
-        }
+        try {
+            List<Map<String, Object>> temp = new ArrayList<Map<String, Object>>();
+            for (Map.Entry<Integer, Map<String, Object>> e : LegacyDatabase.getBooks().entrySet()) {
+                temp.add(e.getValue());
+            }
 
-        System.out.println("ID | TITLE | AUTHOR | Y | CAT | AV");
-        for (Map<String, Object> b : temp) {
-            System.out.println(b.get("id") + " | " + b.get("title") + " | " + b.get("author") + " | " + b.get("year") + " | "
-                    + b.get("category") + " | " + b.get("availableCopies"));
+            if (temp.isEmpty()) {
+                logger.info("Consulta realizada com sucesso: Nenhum livro disponível no momento.");
+                System.out.println("Nao tem livros disponiveis");
+                return; 
+            }
+
+            System.out.println("ID | TITLE | AUTHOR | Y | CAT | AV");
+            for (Map<String, Object> b : temp) {
+                System.out.println(b.get("id") + " | " + b.get("title") + " | " + b.get("author") + " | " + b.get("year") + " | "
+                        + b.get("category") + " | " + b.get("availableCopies"));
+            }
+            logger.info("Listagem de livros processada com sucesso. Total de registros exibidos: {}.", temp.size());
+
+        } catch (Exception e) {
+            logger.error("Erro estrutural catastrófico detectado ao listar os livros do sistema.", e);
+            throw e;
         }
     }
 
     public Map<String, Object> findById(int id) {
+        if (id <= 0) {
+            // Placeholder utilizado no log de nível ERROR para evitar gargalos de memória
+            logger.error("Tentativa inválida de busca por ID de livro. Valor informado: {}.", id);
+            throw new IllegalArgumentException("O ID do livro para busca deve ser maior que zero.");
+        }
         return LegacyDatabase.getBookById(id);
     }
 
