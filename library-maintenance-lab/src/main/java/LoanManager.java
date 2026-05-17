@@ -152,7 +152,7 @@ public class LoanManager {
                 notificationService.notifyReturn(userId, bookId, "CLOSED", fine, channel);
                 LegacyDatabase.addLog("loan-return-ok-" + loanId + "-" + process + "-" + handler);
             } else {
-                throw new RuntimeException("user/book missing for return");
+                throw new RuntimeException("useer/book missing for return");
             }
         } else {
             throw new RuntimeException("loan already closed");
