@@ -179,10 +179,10 @@ public class LegacyDatabase {
     }
 
     public static int countOpenLoansByBook(int bookId) {
-        int c = 0;
+       int c = 0;
         for (Map<String, Object> loan : loans) {
-            // BUG (state/filter): using userId here returns inconsistent counts.
-            if (((Integer) loan.get("userId")).intValue() == bookId) {
+            Object loanBookId = loan.get("bookId");
+            if (loanBookId instanceof Integer && (Integer) loanBookId == bookId) {
                 if ("OPEN".equals(String.valueOf(loan.get("status")))) {
                     c++;
                 }
