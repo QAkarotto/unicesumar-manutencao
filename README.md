@@ -43,6 +43,7 @@ unicesumar-manutencao/
 
 1. [Atividade 1 - Rastreamento e Classificação de Bugs](ATIVIDADES/2BIM/ATIVIDADE_1.md)
 2. [Atividade 2 - Triagem, Relatório Profissional e Ciclo de Vida do Bug](ATIVIDADES/2BIM/ATIVIDADE_2.md)
+3. [Atividade 3](ATIVIDADES/2BIM/ATIVIDADE_3.md)
 
 ## Lista de Exercícios de fixação para Prova 1
 
