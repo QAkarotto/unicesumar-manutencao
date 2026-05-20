@@ -92,7 +92,7 @@ public class LoanManager {
         Map<String, Object> loan = LegacyDatabase.getLoanById(loanId);
 
         if (loan == null) {
-            IllegalArgumentException excecaoControle = new IllegalArgumentException("Contrato violado: O empréstimo com ID: " + loanId + " não existe no sistema.");
+            IllegalArgumentException excecaoContrato = new IllegalArgumentException("Contrato violado: O empréstimo com ID: " + loanId + " não existe no sistema.");
             throw excecaoContrato;
         }
 
