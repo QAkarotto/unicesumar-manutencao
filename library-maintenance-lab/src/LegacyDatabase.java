@@ -28,7 +28,7 @@ public class LegacyDatabase {
     public static int addBookData(String title, String author, int year, String category, int totalCopies, int availableCopies,
             String shelfCode, String isbn) {
         
-        // CORREÇÃO DO BUG: Validação por contrato para impedir título nulo ou vazio
+        // CORREÇÃO DO BUG 1: Validação por contrato para impedir título nulo ou vazio
         if (title == null || title.trim().isEmpty()) {
             throw new IllegalArgumentException("O título do livro não pode ser nulo ou vazio.");
         }
@@ -156,10 +156,14 @@ public class LegacyDatabase {
 
     public static void unsafeUpdateUserField(int id, String field, Object value) {
         Map<String, Object> u = users.get(id);
-        if (u != null) {
-            u.put(field, value);
-            logs.add("user-updated-" + id + "-" + field);
+        
+        // CORREÇÃO DO BUG 2: Validação para impedir atualização de usuário inexistente
+        if (u == null) {
+            throw new IllegalArgumentException("Não é possível atualizar: Usuário com ID " + id + " não existe.");
         }
+        
+        u.put(field, value);
+        logs.add("user-updated-" + id + "-" + field);
     }
 
     public static String getSystemMode() {
