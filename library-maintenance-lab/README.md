@@ -67,3 +67,46 @@ Teste de commit
 ## Teste 2 
 
 Teste de Commit 2
+
+## Trabalho - Felipe Shibata
+
+### Refatorações realizadas - Felipe Shibata
+
+#### Problemas encontrados
+
+1. LoanManager.java - método borrowBook muito longo (Long Method)
+2. LoanManager.java - múltiplos ifs aninhados (Arrow Code)
+3. LoanManager.java - duplicação de empréstimo para SMS (Bug lógico)
+4. LoanManager.java - cálculo de multa incorreto (String compare)
+5. LoanManager.java - dívida sendo diminuída ao invés de aumentada (Bug)
+6. LoanManager.java - método returnBook não falha corretamente (Fail Silent)
+7. LoanManager.java - uso excessivo de números mágicos
+8. LoanManager.java - mistura de responsabilidades (SRP violado)
+9. Main.java - múltiplos ifs para argumentos (Code Smell)
+10. Main.java - lógica acoplada ao método main
+
+#### Code Smells identificados
+
+- Long Method
+- Arrow Code
+- God Method
+- Magic Numbers
+- Primitive Obsession
+- Poor Error Handling
+
+#### Refatorações aplicadas
+
+- Extract Method
+- Replace Nested Conditionals with Guard Clauses
+- Fix Bug lógico
+- Replace Magic Numbers
+- Improve Date Handling (LocalDate)
+- Separation of Concerns
+- Simplificação de fluxo (Early Return)
+
+#### Evidência de funcionamento
+
+- Empréstimos continuam sendo criados corretamente
+- Devoluções atualizam estoque corretamente
+- Multas são calculadas corretamente
+- Sistema continua executando sem erros
