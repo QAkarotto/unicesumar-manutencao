@@ -1,7 +1,12 @@
 import java.util.List;
 import java.util.Map;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class LibrarySystem {
+
+    private static final Logger logger = LogManager.getLogger(LibrarySystem.class);
 
     // God Class: too many responsibilities
     // WARNING: This class is responsible for too many things.
@@ -189,14 +194,23 @@ public class LibrarySystem {
         }
     }
 
-    public void handleListLoansByUser() {
+public void handleListLoansByUser() {
         try {
-            String userId = DataUtil.readLine("User Id: ");
+            String userIdStr = DataUtil.readLine("User Id: ");
+
+            int userId = Integer.parseInt(userIdStr);
+
+            logger.info("Iniciando listagem de empréstimos para o usuário ID: {}.", userId);
 
             loanManager.listUserLoans(userId);
+
+        } catch (NumberFormatException e) {
+            logger.warn("Falha no formato do ID inserido. O valor digitado não é um inteiro válido.");
+            System.out.println("Erro: O ID do usuário deve ser um número inteiro válido.");
+            
         } catch (Exception e) {
-            System.out.println("Error listing user loans: " + e.getMessage());
-            LegacyDatabase.addLog("handle-list-loans-by-user");
+            logger.error("Erro fatal ao tentar listar os empréstimos por usuário.", e);
+            LegacyDatabase.addLog("handle-list-loans-by-user-error");
         }
     }
 
