@@ -6,7 +6,7 @@ import org.apache.logging.log4j.Logger;
 
 public class LoanManager {
 
-        private static final Logger logger = LogManager.getLogger(LoanManager.class);
+    private static final Logger logger = LogManager.getLogger(LoanManager.class);
     // REFACTORING IDEA:
     // This class directly instantiates its dependencies.
     // The coupling makes unit testing and changes harder.
@@ -142,10 +142,10 @@ public class LoanManager {
                     loan.put("returnedDate", returnedDate);
                     loan.put("status", "CLOSED");
 
-                    double fine = calculateFineLegacy(String.valueOf(loan.get("dueDate")), returnedDate, forceFlag, process,
+                    double fine = calculateFineLegacy(String.valueOf(loan.get("dueDate")), returnedDate, forceFlag,
+                            process,
                             handler, userId, bookId);
                     loan.put("fine", fine);
-
 
                     int av = ((Integer) book.get("availableCopies")).intValue();
                     int total = ((Integer) book.get("totalCopies")).intValue();
@@ -155,16 +155,16 @@ public class LoanManager {
                     }
                     book.put("availableCopies", av);
 
-
                     if (fine > 0) {
                         double debt = ((Double) user.get("debt")).doubleValue();
-                        debt = debt + fine; 
+                        debt = debt + fine;
                         user.put("debt", debt);
-                        
 
-                        logger.info("Multa de {} aplicada com sucesso ao usuário ID {}. Nova dívida total: {}.", fine, userId, debt);
+                        logger.info("Multa de {} aplicada com sucesso ao usuário ID {}. Nova dívida total: {}.", fine,
+                                userId, debt);
                     } else {
-                        logger.info("Empréstimo ID {} encerrado com sucesso dentro do prazo. Nenhuma multa aplicada.", loanId);
+                        logger.info("Empréstimo ID {} encerrado com sucesso dentro do prazo. Nenhuma multa aplicada.",
+                                loanId);
                     }
 
                     notificationService.notifyReturn(userId, bookId, "CLOSED", fine, channel);
@@ -241,6 +241,37 @@ public class LoanManager {
             System.out.println(item.get("id") + " | " + item.get("userId") + " | " + item.get("bookId") + " | "
                     + item.get("borrowDate") + " | " + item.get("dueDate") + " | " + item.get("returnedDate") + " | "
                     + item.get("status") + " | " + item.get("fine"));
+        }
+    }
+
+    public void listUserLoans(
+            String userId) {
+        System.out.println("ID | BOOK | BORROW | DUE | RETURNED | STATUS | FINE");
+
+        List<Map<String, Object>> list = LegacyDatabase.getLoans();
+
+        for (Map<String, Object> item : list) {
+            String loanUserId = item.get("userId").toString();
+
+            if (!userId.equals(loanUserId))
+                continue;
+
+            Object loanId = item.get("id");
+            Object loanBookId = item.get("bookId");
+            Object loanBorrowDate = item.get("borrowDate");
+            Object loanDueDate = item.get("dueDate");
+            Object loanReturnedDate = item.get("returnedDate");
+            Object loanStatus = item.get("status");
+            Object loanFine = item.get("fine");
+
+            System.out.println(
+                    loanId + " | " +
+                            loanBookId + " | " +
+                            loanBorrowDate + " | " +
+                            loanDueDate + " | " +
+                            loanReturnedDate + " | " +
+                            loanStatus + " | " +
+                            loanFine);
         }
     }
 

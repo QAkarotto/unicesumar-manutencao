@@ -88,7 +88,7 @@ public class LibrarySystem {
 
     public void handleRegisterBook() {
         try {
-             String title = DataUtil.readLine("Title: ");
+            String title = DataUtil.readLine("Title: ");
             String author = DataUtil.readLine("Author: ");
             int year = DataUtil.askInt("Year: ", -1);
             String category = DataUtil.readLine("Category: ");
@@ -96,7 +96,7 @@ public class LibrarySystem {
             int available = DataUtil.askInt("Available copies: ", -1);
             String shelfCode = DataUtil.readLine("Shelf code: ");
             String isbn = DataUtil.readLine("ISBN: ");
-        
+
             int id = bookManager.registerBook(title, author, year, category, total, available, shelfCode, isbn);
             System.out.println("Book registered with id " + id);
 
@@ -194,7 +194,7 @@ public class LibrarySystem {
         }
     }
 
-public void handleListLoansByUser() {
+    public void handleListLoansByUser() {
         try {
             String userIdStr = DataUtil.readLine("User Id: ");
 
@@ -202,12 +202,12 @@ public void handleListLoansByUser() {
 
             logger.info("Iniciando listagem de empréstimos para o usuário ID: {}.", userId);
 
-            loanManager.listUserLoans(userId);
+            loanManager.listUserLoans(String.valueOf(userId));
 
         } catch (NumberFormatException e) {
             logger.warn("Falha no formato do ID inserido. O valor digitado não é um inteiro válido.");
             System.out.println("Erro: O ID do usuário deve ser um número inteiro válido.");
-            
+
         } catch (Exception e) {
             logger.error("Erro fatal ao tentar listar os empréstimos por usuário.", e);
             LegacyDatabase.addLog("handle-list-loans-by-user-error");
@@ -309,7 +309,7 @@ public void handleListLoansByUser() {
         try {
             // LEGACY CODE:
             // This startup scenario was added quickly to simplify manual testing.
-            //não da para apagar essa linha 
+            // não da para apagar essa linha
             int idBook = bookManager.registerBook("Legacy Java", "Unknown", 2010, "CS", 2, 2, "B1", "ISBN-999");
             UserManager.UserData user = new UserManager.UserData();
             user.name = "Carlos";
