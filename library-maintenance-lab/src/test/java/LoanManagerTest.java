@@ -2,10 +2,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 
 public class LoanManagerTest {
+
+     private LoanManager loanManager;
 
     @Before
     public void resetLegacyDatabase() {
@@ -59,5 +62,28 @@ public class LoanManagerTest {
         assertEquals("A multa deveria ser somada à dívida, não subtraída.", dividaEsperada, dividaObtida, 0.0001);
     }
 
+    @Test
+    public void deveRegistrarLogDaPoliticaSeteEConfirmacao() {
+        loanManager.registerBorrowPolicy("web", 7, 101);
+
+        assertTrue("Deve conter o log da política 7", LegacyDatabase.getLogs().contains("loan-policy-7-web"));
+        assertTrue("Deve conter o log de confirmação do empréstimo", LegacyDatabase.getLogs().contains("loan-created-ok-101"));
+    }
+
+    @Test
+    public void deveRegistrarLogDaPoliticaOitoEConfirmacao() {
+        loanManager.registerBorrowPolicy("mobile", 8, 102);
+
+        assertTrue("Deve conter o log da política 8", LegacyDatabase.getLogs().contains("loan-policy-8-mobile"));
+        assertTrue("Deve conter o log de confirmação do empréstimo", LegacyDatabase.getLogs().contains("loan-created-ok-102"));
+    }
+
+    @Test
+    public void deveRegistrarLogDefaultQuandoCodigoNaoForMapeado() {
+        loanManager.registerBorrowPolicy("totem", 99, 103);
+
+        assertTrue("Deve conter o log da política padrão (default)", LegacyDatabase.getLogs().contains("loan-policy-default-totem"));
+        assertTrue("Deve conter o log de confirmação do empréstimo", LegacyDatabase.getLogs().contains("loan-created-ok-103"));
+    }
 }
 
