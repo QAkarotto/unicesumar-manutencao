@@ -92,20 +92,21 @@ public class UserManager {
     }
 
     public boolean canBorrow(int userId) {
-        Map<String, Object> data = LegacyDatabase.getUserById(userId);
-        if (data == null) {
-            return false;
-        }
-        String status = String.valueOf(data.get("status"));
-        double debt = ((Double) data.get("debt")).doubleValue();
-        if (!"ACTIVE".equals(status)) {
-            return false;
-        }
-        if (debt > 100.0) {
-            return false;
-        }
-        return true;
+    Map<String, Object> data = LegacyDatabase.getUserById(userId);
+    
+    if (data == null) {
+        return false;
     }
+    
+    String status = String.valueOf(data.get("status"));
+    double debt = ((Double) data.get("debt")).doubleValue();
+    
+    if (!"ACTIVE".equals(status) || debt > 100.0) {
+        return false;
+    }
+    
+    return true;
+}
 
     // duplicate validation in another class too
     public boolean validateUserData(String name, String email, String phone) {
