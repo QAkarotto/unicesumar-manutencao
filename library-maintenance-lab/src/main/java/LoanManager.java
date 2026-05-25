@@ -100,16 +100,20 @@ public class LoanManager {
         notificationService.notifyLoanCreated(userId, bookId, borrowDate, dueDate, channel, "TPL1", "manager");
     }
 
-    private void registerBorrowPolicy(String process, int policyCode, int loanId) {
-        if (policyCode == 7) {
+    public void registerBorrowPolicy(String process, int policyCode, int loanId) {
+    switch (policyCode) {
+        case 7:
             LegacyDatabase.addLog("loan-policy-7-" + process);
-        } else if (policyCode == 8) {
+            break;
+        case 8:
             LegacyDatabase.addLog("loan-policy-8-" + process);
-        } else {
+            break;
+        default:
             LegacyDatabase.addLog("loan-policy-default-" + process);
-        }
+            break;
+    }
 
-        LegacyDatabase.addLog("loan-created-ok-" + loanId);
+    LegacyDatabase.addLog("loan-created-ok-" + loanId);
     }
 
     public void returnBook(int loanId, String returnedDate, String channel, int forceFlag, String process,
