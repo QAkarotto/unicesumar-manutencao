@@ -2,7 +2,7 @@ import java.util.Map;
 
 public class UserManager {
 
-        static class UserData {
+    static class UserData {
         String name;
         String email;
         String phone;
@@ -13,7 +13,6 @@ public class UserManager {
     }
 
     public int registerUser(UserData user) {
-        int id = -1;
         if (DataUtil.isBlank(user.name)) {
             throw new RuntimeException("name invalid");
         }
@@ -39,7 +38,8 @@ public class UserManager {
             user.status = "ACTIVE";
         }
 
-        id = LegacyDatabase.addUserData(user.name, DataUtil.normalizeEmail(user.email), user.phone, user.userType, user.city, user.document, user.status);
+        int id = LegacyDatabase.addUserData(user.name, DataUtil.normalizeEmail(user.email), user.phone, user.userType,
+                user.city, user.document, user.status);
         LegacyDatabase.addLog("user-manager-register-" + id);
         return id;
     }
@@ -57,7 +57,7 @@ public class UserManager {
 
         int id = registerUser(user);
         System.out.println("User saved with id " + id);
-    }       
+    }
 
     public Map<String, Object> findById(int id) {
         return LegacyDatabase.getUserById(id);
@@ -66,8 +66,9 @@ public class UserManager {
     public void listUsers() {
         System.out.println("ID | NAME | EMAIL | TYPE | CITY | STATUS | DEBT");
         for (Map<String, Object> u : LegacyDatabase.getUsers().values()) {
-            System.out.println(u.get("id") + " | " + u.get("name") + " | " + u.get("email") + " | " + u.get("userType") + " | "
-                    + u.get("city") + " | " + u.get("status") + " | " + u.get("debt"));
+            System.out.println(
+                    u.get("id") + " | " + u.get("name") + " | " + u.get("email") + " | " + u.get("userType") + " | "
+                            + u.get("city") + " | " + u.get("status") + " | " + u.get("debt"));
         }
     }
 
@@ -92,21 +93,21 @@ public class UserManager {
     }
 
     public boolean canBorrow(int userId) {
-    Map<String, Object> data = LegacyDatabase.getUserById(userId);
-    
-    if (data == null) {
-        return false;
+        Map<String, Object> data = LegacyDatabase.getUserById(userId);
+
+        if (data == null) {
+            return false;
+        }
+
+        String status = String.valueOf(data.get("status"));
+        double debt = ((Double) data.get("debt")).doubleValue();
+
+        if (!"ACTIVE".equals(status) || debt > 100.0) {
+            return false;
+        }
+
+        return true;
     }
-    
-    String status = String.valueOf(data.get("status"));
-    double debt = ((Double) data.get("debt")).doubleValue();
-    
-    if (!"ACTIVE".equals(status) || debt > 100.0) {
-        return false;
-    }
-    
-    return true;
-}
 
     // duplicate validation in another class too
     public boolean validateUserData(String name, String email, String phone) {
