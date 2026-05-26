@@ -10,7 +10,7 @@ public class LoanManager {
     // REFACTORING IDEA:
     // This class directly instantiates its dependencies.
     // The coupling makes unit testing and changes harder.
-    private NotificationService notificationService = new NotificationService();
+    final private NotificationService notificationService = new NotificationService();
 
     // MAINTENANCE NOTE:
     // This method became very large after multiple feature additions.
