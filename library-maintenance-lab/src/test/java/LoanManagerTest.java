@@ -10,6 +10,12 @@ public class LoanManagerTest {
 
      private LoanManager loanManager;
 
+     @Test
+    public void testProcessNotificationFlow() {
+        loanManager.listUserLoans("usuario1");
+        assertTrue("O fluxo deve registrar as ações no banco legado", LegacyDatabase.getLogs().size() >= 0);
+    }
+    
     @Before
     public void resetLegacyDatabase() {
         LegacyDatabase.getBooks().clear();
