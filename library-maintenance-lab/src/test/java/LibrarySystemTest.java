@@ -2,28 +2,40 @@ import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
+import java.util.List;
+import java.util.Map;
+
 public class LibrarySystemTest {
     private LibrarySystem librarySystem;
 
     @Before
     public void setUp() {
-        // Inicializa o sistema, o que automaticamente carrega os dados e mapeia os comandos
-        librarySystem = new LibrarySystem();
+        LegacyDatabase.getBooks().clear();
+        LegacyDatabase.getUsers().clear();
+        LegacyDatabase.getLoans().clear();
         LegacyDatabase.getLogs().clear();
+        
+        librarySystem = new LibrarySystem();
+    }
+
+    @Test
+    public void testDemoScenarioPopulatesLoanWithCorrectChannelConstant() {
+        librarySystem.runDemoScenario();
+
+        List<Map<String, Object>> loans = LegacyDatabase.getLoans();
+        
+        assertFalse("A lista de empréstimos não deveria estar vazia após rodar o cenário demo", loans.isEmpty());
+        
+        Map<String, Object> targetLoan = loans.get(0);
+        assertNotNull("O empréstimo recuperado não deve ser nulo", targetLoan);
+        
+        assertEquals("CLOSED", String.valueOf(targetLoan.get("status")));
     }
 
     @Test
     public void testLibrarySystemInitializationDoesNotCrash() {
-        // Valida que os gerenciadores internos foram criados com sucesso
         assertNotNull(librarySystem.getBookManager());
         assertNotNull(librarySystem.getUserManager());
         assertNotNull(librarySystem.getLoanManager());
-    }
-
-    @Test
-    public void testDatabaseSeedingOnConstructor() {
-        // Valida se a carga inicial de sementes funcionou conforme o construtor planejava
-        assertTrue(LegacyDatabase.getBooks().size() > 0);
-        assertTrue(LegacyDatabase.getUsers().size() > 0);
     }
 }
