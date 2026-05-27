@@ -7,6 +7,7 @@ import org.apache.logging.log4j.Logger;
 public class BookManager {
 
     private static final Logger logger = LogManager.getLogger(BookManager.class);
+    private static final String AVAILABLE_COPIES_KEY = "availableCopies";
 
     public int registerBook(String title, String author, int year, String category, int totalCopies, int availableCopies,
                             String shelfCode, String isbn) {
@@ -53,14 +54,19 @@ public class BookManager {
 
             if (temp.isEmpty()) {
                 logger.info("The listing was processed, but the book database is empty."); // A listagem foi processada, mas o banco de dados de livros está vazio.
-                System.out.println("No books listed in the system."); // Nenhum livro listado no sistema.
+                logger.info("No books listed in the system.");
                 return; 
             }
 
-            System.out.println("ID | TITLE | AUTHOR | Y | CAT | AV");
+            logger.info("ID | TITLE | AUTHOR | Y | CAT | AV");
             for (Map<String, Object> b : temp) {
-                System.out.println(b.get("id") + " | " + b.get("title") + " | " + b.get("author") + " | " + b.get("year") + " | "
-                        + b.get("category") + " | " + b.get("availableCopies"));
+                logger.info("{} | {} | {} | {} | {} | {}", 
+                        b.get("id"), 
+                        b.get("title"), 
+                        b.get("author"), 
+                        b.get("year"), 
+                        b.get("category"), 
+                        b.get(AVAILABLE_COPIES_KEY));
             }
 
             logger.info("Book listing completed successfully. Total displayed: {} books.", temp.size()); // Listagem de livros concluída com sucesso. Total exibido: {} livros.
@@ -74,8 +80,7 @@ public class BookManager {
     public Map<String, Object> findById(int id) {
         return LegacyDatabase.getBookById(id);
     }
-
-  
+    
     public void updateAvailableWithLegacyRule(int id, int newAvailable, int opCode, String process, String manager,
             int flag, String reason) {
         
@@ -93,23 +98,23 @@ public class BookManager {
         }
 
         if (opCode == 1) {
-            data.put("availableCopies", newAvailable);
+            data.put(AVAILABLE_COPIES_KEY, newAvailable);
         } else if (opCode == 2) {
-            int old = ((Integer) data.get("availableCopies")).intValue();
+            int old = ((Integer) data.get(AVAILABLE_COPIES_KEY)).intValue();
             int x = old + newAvailable;
             if (x > total) {
                 x = total;
             }
-            data.put("availableCopies", x);
+            data.put(AVAILABLE_COPIES_KEY, x);
         } else if (opCode == 3) {
-            int old = ((Integer) data.get("availableCopies")).intValue();
+            int old = ((Integer) data.get(AVAILABLE_COPIES_KEY)).intValue();
             int x = old - newAvailable;
             if (x < 0) {
                 x = 0;
             }
-            data.put("availableCopies", x);
+            data.put(AVAILABLE_COPIES_KEY, x);
         } else {
-            data.put("availableCopies", newAvailable);
+            data.put(AVAILABLE_COPIES_KEY, newAvailable);
         }
 
         if (flag == 9) {
