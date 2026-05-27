@@ -4,9 +4,8 @@ import java.util.HashMap;
 
 public class LibrarySystem {
 
-    // God Class: too many responsibilities
-    // WARNING: This class is responsible for too many things.
-    // This might violate separation of concerns.
+    private static final String CHANNEL_EMAIL = "email";
+
     private BookManager bookManager = new BookManager();
     private UserManager userManager = new UserManager();
     private LoanManager loanManager = new LoanManager();
@@ -17,7 +16,7 @@ public class LibrarySystem {
     private boolean running = true;
     private int menuCounter = 0;
     private final Map<String, Runnable> commands = new HashMap<>();
-
+    
     public LibrarySystem() {
         LegacyDatabase.seedInitialData();
         setupDispatcher();
@@ -162,7 +161,7 @@ public class LibrarySystem {
             int bookId = DataUtil.askInt("Book ID: ", -1);
             String borrowDate = DataUtil.ask("Borrow date: ", DataUtil.nowDate());
             String dueDate = DataUtil.ask("Due date: ", DataUtil.datePlusDaysApprox(borrowDate, 14));
-            String channel = DataUtil.ask("Channel (email/sms): ", "email");
+            String channel = DataUtil.ask("Channel (email/sms): ", CHANNEL_EMAIL);
             int maxDays = DataUtil.askInt("Max days: ", 14);
             int policyCode = DataUtil.askInt("Policy code: ", 0);
 
@@ -178,7 +177,7 @@ public class LibrarySystem {
         try {
             int loanId = DataUtil.askInt("Loan ID: ", -1);
             String returnDate = DataUtil.ask("Return date: ", DataUtil.nowDate());
-            String channel = DataUtil.ask("Channel: ", "email");
+            String channel = DataUtil.ask("Channel: ", CHANNEL_EMAIL);
             int forceFlag = DataUtil.askInt("Force flag (0/1/2): ", 0);
 
             loanManager.returnBook(loanId, returnDate, channel, forceFlag, "main", "handle");
@@ -318,8 +317,8 @@ public class LibrarySystem {
             int idUser = userManager.registerUser("Carlos", "carlos@mail.com", "3333-3333", "student", "Maringa",
                     "DOC-3", "ACTIVE");
             int loanId = loanManager.borrowBook(idUser, idBook, DataUtil.nowDate(), DataUtil.datePlusDaysApprox(DataUtil.nowDate(), 14),
-                    "email", 14, "demo", 0);
-            loanManager.returnBook(loanId, DataUtil.nowDate(), "email", 0, "demo", "handler");
+                    CHANNEL_EMAIL, 14, "demo", 0);
+            loanManager.returnBook(loanId, DataUtil.nowDate(), CHANNEL_EMAIL, 0, "demo", "handler");
         } catch (Exception e) {
             LegacyDatabase.addLog("demo-error-" + e.getMessage());
         }
