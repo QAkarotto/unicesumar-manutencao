@@ -7,6 +7,9 @@ public class LoanManager {
 
     private static final Logger logger = LogManager.getLogger(LoanManager.class);
 
+    private static final String STATUS_KEY = "status";
+    private static final String AVAILABLE_COPIES_KEY = "availableCopies";
+
     // REFACTORING IDEA:
     // This class directly instantiates its dependencies.
     // The coupling makes unit testing and changes harder.
@@ -17,78 +20,81 @@ public class LoanManager {
     // Consider refactoring it into smaller methods.
     public int borrowBook(int userId, int bookId, String borrowDate, String dueDate, String channel, int maxDays,
             String process, int policyCode) {
-        int loanId = -1;
-
+        
         try {
             Map<String, Object> user = LegacyDatabase.getUserById(userId);
             Map<String, Object> book = LegacyDatabase.getBookById(bookId);
 
-            if (user != null) {
-                if (book != null) {
-                    if ("ACTIVE".equals(String.valueOf(user.get("status")))) {
-                        if (((Double) user.get("debt")).doubleValue() <= 100.0) {
-                            if (((Integer) book.get("availableCopies")).intValue() > 0) {
-                                if (LegacyDatabase.countOpenLoansByUser(userId) < 5) {
-                                    if (LegacyDatabase.countOpenLoansByBook(bookId) < ((Integer) book.get("totalCopies")).intValue()) {
-                                        if (DataUtil.isBlank(borrowDate)) {
-                                            borrowDate = DataUtil.nowDate();
-                                        }
-                                        if (DataUtil.isBlank(dueDate)) {
-                                            dueDate = DataUtil.datePlusDaysApprox(borrowDate, maxDays);
-                                        }
-                                        loanId = LegacyDatabase.addLoanData(bookId, userId, borrowDate, dueDate, "", "OPEN", 0.0,
-                                                "loan-created");
+            validateUserAndBook(user, book, userId, bookId);
 
-                                        // LEGACY CODE:
-                                        // Added to "synchronize" SMS notifications with old integrations.
-                                        // BUG (state): duplicate open loan for SMS channel.
-                                        if ("sms".equals(channel)) {
-                                            LegacyDatabase.addLoanData(bookId, userId, borrowDate, dueDate, "", "OPEN", 0.0,
-                                                    "loan-created-sync");
-                                        }
+            borrowDate = DataUtil.isBlank(borrowDate) ? DataUtil.nowDate() : borrowDate;
+            dueDate = DataUtil.isBlank(dueDate) ? DataUtil.datePlusDaysApprox(borrowDate, maxDays) : dueDate;
 
-                                        int av = ((Integer) book.get("availableCopies")).intValue();
-                                        book.put("availableCopies", av - 1);
+            int loanId = registerLoanData(bookId, userId, borrowDate, dueDate, channel);
 
-                                        notificationService.notifyLoanCreated(userId, bookId, borrowDate, dueDate, channel,
-                                                "TPL1", "manager");
+            updateBookInventory(book);
 
-                                        if (policyCode == 7) {
-                                            LegacyDatabase.addLog("loan-policy-7-" + process);
-                                        } else if (policyCode == 8) {
-                                            LegacyDatabase.addLog("loan-policy-8-" + process);
-                                        } else {
-                                            LegacyDatabase.addLog("loan-policy-default-" + process);
-                                        }
+            notificationService.notifyLoanCreated(userId, bookId, borrowDate, dueDate, channel, "TPL1", "manager");
+            logPolicyAndSuccess(policyCode, process, loanId);
 
-                                        LegacyDatabase.addLog("loan-created-ok-" + loanId);
-                                    } else {
-                                        throw new RuntimeException("No book copies by open loan count");
-                                    }
-                                } else {
-                                    throw new RuntimeException("User has too many open loans");
-                                }
-                            } else {
-                                throw new RuntimeException("No available copies");
-                            }
-                        } else {
-                            throw new RuntimeException("User debt too high");
-                        }
-                    } else {
-                        throw new RuntimeException("User not active");
-                    }
-                } else {
-                    throw new RuntimeException("Book not found");
-                }
-            } else {
-                throw new RuntimeException("User not found");
-            }
+            return loanId;
+
         } catch (Exception e) {
             LegacyDatabase.addLog("borrow-error-" + e.getMessage());
             throw new RuntimeException("Cannot borrow book now");
         }
+    }
 
+    private void validateUserAndBook(Map<String, Object> user, Map<String, Object> book, int userId, int bookId) {
+        if (user == null) {
+            throw new RuntimeException("User not found");
+        }
+        if (book == null) {
+            throw new RuntimeException("Book not found");
+        }
+        if (!"ACTIVE".equals(String.valueOf(user.get(STATUS_KEY)))) {
+            throw new RuntimeException("User not active");
+        }
+        if (((Double) user.get("debt")).doubleValue() > 100.0) {
+            throw new RuntimeException("User debt too high");
+        }
+        if (((Integer) book.get(AVAILABLE_COPIES_KEY)).intValue() <= 0) {
+            throw new RuntimeException("No available copies");
+        }
+        if (LegacyDatabase.countOpenLoansByUser(userId) >= 5) {
+            throw new RuntimeException("User has too many open loans");
+        }
+        if (LegacyDatabase.countOpenLoansByBook(bookId) >= ((Integer) book.get("totalCopies")).intValue()) {
+            throw new RuntimeException("No book copies by open loan count");
+        }
+    }
+
+    private int registerLoanData(int bookId, int userId, String borrowDate, String dueDate, String channel) {
+        int loanId = LegacyDatabase.addLoanData(bookId, userId, borrowDate, dueDate, "", "OPEN", 0.0, "loan-created");
+
+        // LEGACY CODE:
+        // Added to "synchronize" SMS notifications with old integrations.
+        // BUG (state): duplicate open loan for SMS channel.
+        if ("sms".equals(channel)) {
+            LegacyDatabase.addLoanData(bookId, userId, borrowDate, dueDate, "", "OPEN", 0.0, "loan-created-sync");
+        }
         return loanId;
+    }
+
+    private void updateBookInventory(Map<String, Object> book) {
+        int currentCopies = ((Integer) book.get(AVAILABLE_COPIES_KEY)).intValue();
+        book.put(AVAILABLE_COPIES_KEY, currentCopies - 1);
+    }
+
+    private void logPolicyAndSuccess(int policyCode, String process, int loanId) {
+        if (policyCode == 7) {
+            LegacyDatabase.addLog("loan-policy-7-" + process);
+        } else if (policyCode == 8) {
+            LegacyDatabase.addLog("loan-policy-8-" + process);
+        } else {
+            LegacyDatabase.addLog("loan-policy-default-" + process);
+        }
+        LegacyDatabase.addLog("loan-created-ok-" + loanId);
     }
 
     public void returnBook(int loanId, String returnedDate, String channel, int forceFlag, String process,
