@@ -85,11 +85,42 @@ public class LoanManager {
         return dueDate;
     }
 
-    private int createLoan(int userId, int bookId, String borrowDate, String dueDate, String channel) {
-        int loanId = LegacyDatabase.addLoanData(bookId, userId, borrowDate, dueDate, "", "OPEN", 0.0, "loan-created");
+   public int borrowBook(int userId, int bookId, String borrowDate, String dueDate, int maxDays,
+            String process, int policyCode) {
+        int loanId = -1;
+
+        try {
+            Map<String, Object> user = LegacyDatabase.getUserById(userId);
+            Map<String, Object> book = LegacyDatabase.getBookById(bookId);
+
+            validateBorrow(userId, bookId, user, book);
+
+            borrowDate = resolveBorrowDate(borrowDate);
+            dueDate = resolveDueDate(dueDate, borrowDate, maxDays);
+
+           
+            loanId = createLoan(userId, bookId, borrowDate, dueDate);
+            
+            updateBookStock(book);
+            
+            
+            notifyBorrow(userId, bookId, borrowDate, dueDate, "Email"); 
+            
+            registerBorrowPolicy(process, policyCode, loanId);
+
+        } catch (Exception e) {
+            LegacyDatabase.addLog("borrow-error-" + e.getMessage());
+            throw new RuntimeException("Cannot borrow book now");
+        }
 
         return loanId;
     }
+
+
+
+private int createLoan(int userId, int bookId, String borrowDate, String dueDate) {
+    int loanId = LegacyDatabase.addLoanData(bookId, userId, borrowDate, dueDate, "", "OPEN", 0.0, "loan-created");
+    return loanId;
 
     private void updateBookStock(Map<String, Object> book) {
         int av = ((Integer) book.get("availableCopies")).intValue();
