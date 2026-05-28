@@ -116,7 +116,7 @@ public class LoanManager {
         return loanId;
     }
 
-
+Refactor(loanmanager):acumulo de código morto por variável inútil
 
 private int createLoan(int userId, int bookId, String borrowDate, String dueDate) {
     int loanId = LegacyDatabase.addLoanData(bookId, userId, borrowDate, dueDate, "", "OPEN", 0.0, "loan-created");
