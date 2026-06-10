@@ -2,6 +2,8 @@
 
 use App\Agendamento;
 use App\Services\GoogleCalendarService;
+use Tests\TestCase;
+use Exception;
 
 class GoogleCalendarServiceTest extends TestCase
 {
