@@ -63,8 +63,13 @@ class AgendamentoController extends Controller
 
         $agendamento->agendamento_status()->associate('1');
 
-        try {
-            $agendamento->save();
+try {
+    $agendamento->save();
+
+    $googleCalendarService = new \App\Services\GoogleCalendarService();
+    $googleCalendarService->sync($agendamento);
+}
+            
         } catch (QueryException $exception) {
             if (Str::contains($exception->getMessage(), 'A estação de trabalho deve ser uma estação ativa do estúdio.')) $msg = 'A estação de trabalho deve ser uma estação ativa do estúdio.';
                 elseif (Str::contains($exception->getMessage(), 'O status do agendamento deve ser um status de agendamento ativo do estúdio.')) $msg = 'O status do agendamento deve ser um status de agendamento ativo do estúdio.';
