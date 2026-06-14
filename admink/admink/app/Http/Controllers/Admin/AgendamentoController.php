@@ -81,6 +81,17 @@ class AgendamentoController extends Controller
         $orcamento->orcamento_status()->associate('3');
 
         $orcamento->save();
+        
+        try {
+            $googleCalendarService = new \App\Services\GoogleCalendarService();
+            
+
+            $googleCalendarService->sync($agendamento, $orcamento);
+
+        } catch (\Exception $e) {
+
+            \Log::error('Erro na integração do Google Calendar: ' . $e->getMessage());
+        }
 
         return redirect()->route('admin.agendamentos.index')->with("success_toastr", "O agendamento foi cadastrado com sucesso!");
     }
