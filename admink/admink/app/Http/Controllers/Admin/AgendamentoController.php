@@ -82,9 +82,20 @@ class AgendamentoController extends Controller
 
         $orcamento->save();
 
+        // --- INÍCIO DA NOSSA NOVA FUNCIONALIDADE (SPROUT METHOD) ---
+        try {
+            // Instancia o serviço isolado que criamos
+            $googleCalendar = new \App\Services\GoogleCalendarService();
+            $googleCalendar->sync($agendamento);
+        } catch (\Exception $e) {
+            // Registra o erro no log do Laravel (storage/logs/laravel.log)
+            // mas deixa o fluxo do usuário continuar normalmente
+            \Log::error("Erro ao sincronizar agendamento {$agendamento->id} com Google Calendar: " . $e->getMessage());
+        }
+        // --- FIM DA NOVA FUNCIONALIDADE ---
+
         return redirect()->route('admin.agendamentos.index')->with("success_toastr", "O agendamento foi cadastrado com sucesso!");
     }
-
     public function show($id)
     {
         abort(400, "A requisição chamou o método @show, porém ele está desabilitado no sistema.");
