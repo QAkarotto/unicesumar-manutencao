@@ -1,61 +1,56 @@
-# Laboratório de Manutenção de Software – Sistema Legado de Biblioteca
+# Library Maintenance Lab
 
-Este repositório simula um sistema Java legado que evoluiu ao longo do tempo com múltiplas mudanças incrementais, correções rápidas e decisões arquiteturais de curto prazo. O resultado é um código funcional, porém com alta complexidade de manutenção, ideal para práticas reais de manutenção de software.
+`library-maintenance-lab` e um laboratorio em Java para estudo de manutencao de software em um sistema legado de biblioteca. O projeto reune codigo propositalmente simples e pontos de evolucao para apoiar analises, correcoes e pequenas melhorias incrementais.
 
-## Contexto do Sistema
+## Sobre o projeto
 
-Com base na implementação atual, o sistema oferece:
+O sistema inclui funcionalidades de cadastro de livros e usuarios, emprestimo e devolucao, geracao de relatorios e execucao por linha de comando. O objetivo e servir como base para estudo de manutencao de software, nao como uma aplicacao pronta para producao.
 
-- cadastro de livros ([BookManager.registerBook](src/BookManager.java#L10))
-- cadastro de usuários ([UserManager.registerUser](src/UserManager.java#L5))
-- empréstimo de livros ([LoanManager.borrowBook](src/LoanManager.java#L14))
-- devolução de livros ([LoanManager.returnBook](src/LoanManager.java#L90))
-- geração de relatórios ([ReportGenerator.generateSimpleReport](src/ReportGenerator.java#L9))
-- operação via menu de linha de comando ([LibrarySystem.startCli](src/LibrarySystem.java#L23))
+### Principais componentes
 
-O projeto contém intencionalmente problemas de manutenibilidade e bugs sutis para apoiar atividades práticas de manutenção preventiva, corretiva e evolutiva.
+- `src/main/java/`: codigo-fonte principal do laboratorio
+- `src/test/java/LoanManagerTest.java`: exemplo de teste unitario com JUnit 4
+- `src/main/resources/log4j2.xml`: configuracao de logging com Log4j 2
+- `pom.xml`: build Maven, testes e execucao do projeto
 
-## Organização das Atividades
+## Pre-requisitos
 
-As atividades foram separadas em documentos próprios para deixar objetivos, escopo e formato de entrega mais claros:
+- Java 8 ou superior
+- Maven 3.8+ recomendado
 
-1. [ATIVIDADE_1.md](ATIVIDADE_1.md) - Análise de Código e Manutenção Preventiva
-2. [ATIVIDADE_2.md](ATIVIDADE_2.md) - Manutenção Corretiva e Evolutiva
+## Como executar
 
-Data final de entrega: 16/04.
-
-## Como Executar o Projeto
-
-Compilar:
+Executar a suite de testes:
 
 ```bash
-javac src/*.java
+mvn test
 ```
 
-Executar modo interativo:
+Executar a aplicacao principal:
 
 ```bash
-java -cp src Main
+mvn -q exec:java -Dexec.mainClass=Main
 ```
 
-Executar listagem rápida:
+Executar com argumento de listagem, se aplicavel ao fluxo atual:
 
 ```bash
-java -cp src Main --list
+mvn -q exec:java -Dexec.mainClass=Main -Dexec.args="--list"
 ```
 
-Executar relatório rápido:
+Executar o exemplo de logging:
 
 ```bash
-java -cp src Main --report
+mvn -q exec:java -Dexec.mainClass=LoggingExample
 ```
 
-## Visão Geral de Problemas de Manutenibilidade
+## Estrutura do repositorio
 
-Problemas detalhados e guias de exploração foram movidos para os arquivos de atividade.
+- `src/main/java/`: classes do sistema legado e utilitarios
+- `src/main/resources/`: recursos da aplicacao
+- `src/test/java/`: testes automatizados
+- `README.md`: visao geral do projeto e instrucoes de execucao
 
-## Observação Final
+## Observacao
 
-O objetivo não é reescrever o sistema inteiro do zero.
-
-Os estudantes devem melhorar o sistema incrementalmente, simulando manutenção de software no mundo real com pequenas mudanças seguras, validação contínua e evolução controlada.
+O foco do laboratorio e permitir evolucao controlada do codigo, com mudancas pequenas e validacao frequente, preservando o comportamento existente sempre que possivel.
