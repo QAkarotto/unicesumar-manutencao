@@ -22,6 +22,11 @@ O foco das atividades é melhorar o código de forma incremental, com mudanças 
 unicesumar-manutencao/
 ├── exemplos/
 │   └── clean-code/
+├── LISTAS_PROVAS/
+│   ├── LISTA_EXERCICIOS_PROVA_1_BIMESTRE.md
+│   ├── GABARITO_LISTA_EXERCICIOS_PROVA_1_BIMESTRE.md
+│   ├── LISTA_EXERCICIOS_PROVA_2_BIMESTRE.md
+│   └── GABARITO_LISTA_EXERCICIOS_PROVA_2_BIMESTRE.md
 ├── ATIVIDADES/
 │   ├── 1BIM/
 │   │   ├── ATIVIDADE_1.md
@@ -52,10 +57,17 @@ unicesumar-manutencao/
 4. [Atividade 4 - Inventário Automatizado, SATD e Refatoração Oportunista](ATIVIDADES/2BIM/ATIVIDADE_4.md)
 5. [Atividade 5 - Adição de Funcionalidade em Sistema Legado com Sprout Class/Method](ATIVIDADES/2BIM/ATIVIDADE_5.md)
 
-## Lista de Exercícios de fixação para Prova 1
+## Listas de Exercícios de Fixação
 
-- [Lista de exercícios](LISTA_PROVA1.md)
-- [Gabarito da lista](GABARITO_LISTA_PROVA1.md)
+### Prova do 1º Bimestre
+
+- [Lista de exercícios](LISTAS_PROVAS/LISTA_EXERCICIOS_PROVA_1_BIMESTRE.md)
+- [Gabarito da lista](LISTAS_PROVAS/GABARITO_LISTA_EXERCICIOS_PROVA_1_BIMESTRE.md)
+
+### Prova do 2º Bimestre
+
+- [Lista de exercícios](LISTAS_PROVAS/LISTA_EXERCICIOS_PROVA_2_BIMESTRE.md)
+- [Gabarito da lista](LISTAS_PROVAS/GABARITO_LISTA_EXERCICIOS_PROVA_2_BIMESTRE.md)
 
 ## Materiais Complementares
 
