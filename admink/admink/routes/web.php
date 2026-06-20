@@ -36,3 +36,25 @@ Route::group(['middleware' => 'auth', 'middleware' => 'check.estudio'], function
 });
 
 Auth::routes(['register' => false, 'reset' => false]);
+
+use App\Services\GoogleCalendarService;
+
+Route::get('/teste-agenda', function () {
+    try {
+        $agenda = new GoogleCalendarService();
+        
+        $dadosExemplo = [
+            'titulo' => 'Teste de Agendamento ADMink',
+            'descricao' => 'Se você está lendo isso, a API do Google funcionou!',
+            'data_inicio' => now()->addHours(1)->format('Y-m-d\TH:i:s'), // Daqui a 1 hora
+            'data_fim' => now()->addHours(2)->format('Y-m-d\TH:i:s'),    // Daqui a 2 horas
+        ];
+
+        $idDoEvento = $agenda->criarAgendamento($dadosExemplo);
+
+        return "Sucesso! Evento criado no Google com o ID: " . $idDoEvento;
+
+    } catch (\Exception $e) {
+        return "Ih, deu erro: " . $e->getMessage();
+    }
+});

@@ -5,9 +5,6 @@ import java.util.Map;
 
 public class LegacyDatabase {
 
-    // MAINTENANCE NOTE:
-    // Hidden global state is shared across all modules.
-    // Tests and behavior can depend on execution order.
     public static Map<Integer, Map<String, Object>> books = new HashMap<Integer, Map<String, Object>>();
     public static Map<Integer, Map<String, Object>> users = new HashMap<Integer, Map<String, Object>>();
     public static List<Map<String, Object>> loans = new ArrayList<Map<String, Object>>();
@@ -22,9 +19,20 @@ public class LegacyDatabase {
     public static int GLOBAL_MAX_LOAN_DAYS = 14;
     public static boolean WORKAROUND_FLAG = true;
 
-    // this method adds a book
+    // REFACTORING (R4): extracted magic numbers into named constants.
+    // Before: if (logs.size() > 500) and for (int i = 400; ...)
+    // Now: named constants make the log rotation policy explicit and easy to change.
+    private static final int LOG_MAX_SIZE = 500;
+    private static final int LOG_TRIM_OFFSET = 400;
+
     public static int addBookData(String title, String author, int year, String category, int totalCopies, int availableCopies,
             String shelfCode, String isbn) {
+        
+        // CORREÇÃO DO BUG 1: Validação por contrato para impedir título nulo ou vazio
+        if (title == null || title.trim().isEmpty()) {
+            throw new IllegalArgumentException("O título do livro não pode ser nulo ou vazio.");
+        }
+
         Map<String, Object> data = new HashMap<String, Object>();
         int id = BOOK_SEQ;
         BOOK_SEQ = BOOK_SEQ + 1;
@@ -43,6 +51,7 @@ public class LegacyDatabase {
         logs.add("book-added-" + id);
         return id;
     }
+
 
     public static int addUserData(String name, String email, String phone, String userType, String city,
             String document, String status) {
@@ -99,9 +108,6 @@ public class LegacyDatabase {
         return null;
     }
 
-    // old impl
-    // public static void reset() { }
-
     public static void addLog(String value) {
         logs.add(value);
     }
@@ -124,7 +130,6 @@ public class LegacyDatabase {
         System.out.println("BOOKS=" + books.size() + "; USERS=" + users.size() + "; LOANS=" + loans.size());
     }
 
-    // Breaking encapsulation intentionally
     public static Map<Integer, Map<String, Object>> getBooks() {
         return books;
     }
@@ -151,10 +156,14 @@ public class LegacyDatabase {
 
     public static void unsafeUpdateUserField(int id, String field, Object value) {
         Map<String, Object> u = users.get(id);
-        if (u != null) {
-            u.put(field, value);
-            logs.add("user-updated-" + id + "-" + field);
+        
+        // CORREÇÃO DO BUG 2: Validação para impedir atualização de usuário inexistente
+        if (u == null) {
+            throw new IllegalArgumentException("Não é possível atualizar: Usuário com ID " + id + " não existe.");
         }
+        
+        u.put(field, value);
+        logs.add("user-updated-" + id + "-" + field);
     }
 
     public static String getSystemMode() {
@@ -178,11 +187,14 @@ public class LegacyDatabase {
         return c;
     }
 
+    // REFACTORING (R3): was filtering by loan.get("userId") instead of loan.get("bookId").
+    // The method is named countOpenLoansByBook, so the filter must use bookId.
+    // This bug caused the availability check in LoanManager to return wrong counts.
     public static int countOpenLoansByBook(int bookId) {
         int c = 0;
         for (Map<String, Object> loan : loans) {
-            // BUG (state/filter): using userId here returns inconsistent counts.
-            if (((Integer) loan.get("userId")).intValue() == bookId) {
+            // FIXED: now correctly filters by bookId, not userId.
+            if (((Integer) loan.get("bookId")).intValue() == bookId) {
                 if ("OPEN".equals(String.valueOf(loan.get("status")))) {
                     c++;
                 }
@@ -197,10 +209,13 @@ public class LegacyDatabase {
         }
     }
 
+    // REFACTORING (R4): replaced magic numbers 500 and 400 with named constants.
+    // LOG_MAX_SIZE = maximum log entries before trimming.
+    // LOG_TRIM_OFFSET = index from which to keep entries after trimming.
     public static void clearLogsIfTooBig() {
-        if (logs.size() > 500) {
+        if (logs.size() > LOG_MAX_SIZE) {
             List<String> tmp = new ArrayList<String>();
-            for (int i = 400; i < logs.size(); i++) {
+            for (int i = LOG_TRIM_OFFSET; i < logs.size(); i++) {
                 tmp.add(logs.get(i));
             }
             logs = tmp;
