@@ -1,7 +1,12 @@
 import java.util.List;
 import java.util.Map;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class LibrarySystem {
+
+    private static final Logger logger = LogManager.getLogger(LibrarySystem.class);
 
     // God Class: too many responsibilities
     // WARNING: This class is responsible for too many things.
@@ -45,6 +50,8 @@ public class LibrarySystem {
                 } else if ("8".equals(option)) {
                     handleListLoans();
                 } else if ("9".equals(option)) {
+                    handleListLoansByUser();
+                } else if ("10".equals(option)) {
                     handleDebugArea();
                 } else if ("0".equals(option)) {
                     running = false;
@@ -73,38 +80,22 @@ public class LibrarySystem {
         System.out.println("6 - Generate report");
         System.out.println("7 - List users");
         System.out.println("8 - List loans");
-        System.out.println("9 - Debug area");
+        System.out.println("9 - List loans by user");
+        System.out.println("10 - Debug area");
         System.out.println("0 - Exit");
         DataUtil.printSeparator();
     }
 
     public void handleRegisterBook() {
         try {
-            // duplicate validation style in manager
             String title = DataUtil.readLine("Title: ");
             String author = DataUtil.readLine("Author: ");
-            int year = DataUtil.askInt("Year: ", 2000);
-            String category = DataUtil.ask("Category: ", "GENERAL");
-            int total = DataUtil.askInt("Total copies: ", 1);
-            int available = DataUtil.askInt("Available copies: ", total);
-            String shelfCode = DataUtil.ask("Shelf code: ", "X0");
-            String isbn = DataUtil.ask("ISBN: ", "NO-ISBN");
-
-            if (DataUtil.isBlank(title)) {
-                throw new RuntimeException("title blank");
-            }
-            if (DataUtil.isBlank(author)) {
-                throw new RuntimeException("author blank");
-            }
-            if (year <= 0) {
-                year = 2000;
-            }
-            if (total <= 0) {
-                total = 1;
-            }
-            if (available < 0) {
-                available = total;
-            }
+            int year = DataUtil.askInt("Year: ", -1);
+            String category = DataUtil.readLine("Category: ");
+            int total = DataUtil.askInt("Total copies: ", -1);
+            int available = DataUtil.askInt("Available copies: ", -1);
+            String shelfCode = DataUtil.readLine("Shelf code: ");
+            String isbn = DataUtil.readLine("ISBN: ");
 
             int id = bookManager.registerBook(title, author, year, category, total, available, shelfCode, isbn);
             System.out.println("Book registered with id " + id);
@@ -122,15 +113,16 @@ public class LibrarySystem {
 
     public void handleRegisterUser() {
         try {
-            String name = DataUtil.readLine("Name: ");
-            String email = DataUtil.readLine("Email: ");
-            String phone = DataUtil.readLine("Phone: ");
-            String type = DataUtil.ask("Type: ", "student");
-            String city = DataUtil.ask("City: ", "Unknown");
-            String document = DataUtil.ask("Document: ", "NO-DOC");
-            String status = DataUtil.ask("Status: ", "ACTIVE");
+            UserManager.UserData user = new UserManager.UserData();
+            user.name = DataUtil.readLine("Name: ");
+            user.email = DataUtil.readLine("Email: ");
+            user.phone = DataUtil.readLine("Phone: ");
+            user.userType = DataUtil.ask("Type: ", "student");
+            user.city = DataUtil.ask("City: ", "Unknown");
+            user.document = DataUtil.ask("Document: ", "NO-DOC");
+            user.status = DataUtil.ask("Status: ", "ACTIVE");
 
-            int id = userManager.registerUser(name, email, phone, type, city, document, status);
+            int id = userManager.registerUser(user);
             System.out.println("User registered with id " + id);
         } catch (Exception e) {
             System.out.println("Error register user: " + e.getMessage());
@@ -148,7 +140,8 @@ public class LibrarySystem {
             int maxDays = DataUtil.askInt("Max days: ", 14);
             int policyCode = DataUtil.askInt("Policy code: ", 0);
 
-            int loanId = loanManager.borrowBook(userId, bookId, borrowDate, dueDate, channel, maxDays, "main", policyCode);
+            int loanId = loanManager.borrowBook(userId, bookId, borrowDate, dueDate, channel, maxDays, "main",
+                    policyCode);
             System.out.println("Loan id " + loanId + " created.");
         } catch (Exception e) {
             System.out.println("Error borrow: " + e.getMessage());
@@ -198,6 +191,26 @@ public class LibrarySystem {
         } catch (Exception e) {
             System.out.println("Error list loans");
             LegacyDatabase.addLog("handle-list-loans-error");
+        }
+    }
+
+    public void handleListLoansByUser() {
+        try {
+            String userIdStr = DataUtil.readLine("User Id: ");
+
+            int userId = Integer.parseInt(userIdStr);
+
+            logger.info("Iniciando listagem de empréstimos para o usuário ID: {}.", userId);
+
+            loanManager.listUserLoans(String.valueOf(userId));
+
+        } catch (NumberFormatException e) {
+            logger.warn("Falha no formato do ID inserido. O valor digitado não é um inteiro válido.");
+            System.out.println("Erro: O ID do usuário deve ser um número inteiro válido.");
+
+        } catch (Exception e) {
+            logger.error("Erro fatal ao tentar listar os empréstimos por usuário.", e);
+            LegacyDatabase.addLog("handle-list-loans-by-user-error");
         }
     }
 
@@ -296,10 +309,20 @@ public class LibrarySystem {
         try {
             // LEGACY CODE:
             // This startup scenario was added quickly to simplify manual testing.
+            // não da para apagar essa linha
             int idBook = bookManager.registerBook("Legacy Java", "Unknown", 2010, "CS", 2, 2, "B1", "ISBN-999");
-            int idUser = userManager.registerUser("Carlos", "carlos@mail.com", "3333-3333", "student", "Maringa",
-                    "DOC-3", "ACTIVE");
-            int loanId = loanManager.borrowBook(idUser, idBook, DataUtil.nowDate(), DataUtil.datePlusDaysApprox(DataUtil.nowDate(), 14),
+            UserManager.UserData user = new UserManager.UserData();
+            user.name = "Carlos";
+            user.email = "carlos@mail.com";
+            user.phone = "3333-3333";
+            user.userType = "studen";
+            user.city = "Maringa";
+            user.document = "DOC-3";
+            user.status = "ACTIVE";
+
+            int idUser = userManager.registerUser(user);
+            int loanId = loanManager.borrowBook(idUser, idBook, DataUtil.nowDate(),
+                    DataUtil.datePlusDaysApprox(DataUtil.nowDate(), 14),
                     "email", 14, "demo", 0);
             loanManager.returnBook(loanId, DataUtil.nowDate(), "email", 0, "demo", "handler");
         } catch (Exception e) {

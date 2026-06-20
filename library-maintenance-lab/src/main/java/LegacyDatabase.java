@@ -1,3 +1,5 @@
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -8,6 +10,7 @@ public class LegacyDatabase {
     // MAINTENANCE NOTE:
     // Hidden global state is shared across all modules.
     // Tests and behavior can depend on execution order.
+    private static final Logger logger = LogManager.getLogger(LegacyDatabase.class);
     public static Map<Integer, Map<String, Object>> books = new HashMap<Integer, Map<String, Object>>();
     public static Map<Integer, Map<String, Object>> users = new HashMap<Integer, Map<String, Object>>();
     public static List<Map<String, Object>> loans = new ArrayList<Map<String, Object>>();
@@ -180,17 +183,23 @@ public class LegacyDatabase {
 
     public static int countOpenLoansByBook(int bookId) {
         int c = 0;
-        for (Map<String, Object> loan : loans) {
-            // BUG (state/filter): using userId here returns inconsistent counts.
-            if (((Integer) loan.get("userId")).intValue() == bookId) {
-                if ("OPEN".equals(String.valueOf(loan.get("status")))) {
-                    c++;
+        try {
+            for (Map<String, Object> loan : loans) {
+                Object loanBookId = loan.get("bookId");
+                
+                if (loanBookId instanceof Integer && ((Integer) loanBookId).intValue() == bookId) {
+                    if ("OPEN".equals(String.valueOf(loan.get("status")))) {
+                        c++;
+                    }
                 }
             }
+            logger.info("Contagem de empréstimos em aberto realizada para o livro ID: {}. Total ativo: {}.", bookId, c);
+            return c;
+        } catch (Exception e) {
+            logger.error("Erro crítico ao processar contagem de empréstimos para o livro ID: {}.", bookId, e);
+            return 0;
         }
-        return c;
     }
-
     public static void printLogs() {
         for (String s : logs) {
             System.out.println(s);
